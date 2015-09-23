@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html xmlns="www.w3.org/1999/xhtml" xml:lang="en">
+
+<!-- <div>this html file, and all pictures generated with it belong to the pulic domain. -->
+
+<meta http-equiv="content-type" content="text/html; charset=UTF-8">
+
+<style>
+  #canvas {
+    border: 1px solid black;
+  }
+  button {
+    border: 0px;
+    background-color: #dadaff;
+  }
+</style>
+
+<canvas id="canvas" width="300" height="300" onClick="canvasClick()"></canvas><br/>
+<button onClick="main()">redraw</button><br/>
+<div id="status"></div>
+<input id="angle" type="number" value="30" min="0" max="90"> camera angle<br/>
+<input id="a" type="number" value="1.1" min="1" max="2"> major half-axis a (b is 1)<br/>
+<input id="trace_depth" type="number" value="25" min="1" max="500"> trace depth<br/>
+<input id="path_length" type="number" value="25" min="1" max="500"> path length<br/>
+<select id="color">
+  <option value="jb">disc on the right</option> 
+  <option value="z">min dist to 1st ray</option> 
+  <option value="bw">left / right</option> 
+</select>
+
+<script type="text/javascript">
+
+var trace_depth;
+var path_length;
+var model;
+var iterations;
+
+var w, h; /* set by init_graphics() */
+var up, right, look_at; /* set by init_cam() */
+
+function c2s(p) {
+    return "("+
+      p.map(function(n) {
+	return n.toPrecision(3);
+      }).join("&nbsp;")
+      +")";
+}
+function canvasClick() {
+    if(!screenshot)
+	main();
+    var x = window.event.x - canvas.offsetLeft;
+    var y = window.event.y - canvas.offsetTop;
+    var r = cam(x, y);
+    status("path: "+ c2s(pos(r)) +" -> "+ c2s(dir(r)));
+    draw_path(trace(path_length, r));
+}
+
+function main() {
+    init_graphics();
+    init_color(get_input("color"));
+    trace_depth = get_input("trace_depth");
+    path_length = get_input("path_length");
+    init_cam(get_input("angle"));
+    model = make_spheroid(get_input("a"));
+    iterations = 0;
+    scanline(w, h);
+    status("done tracing "+ iterations +" rays.");
+    capture();
+}
+
+function scanline(w, h) {
+    var r = [];
+    for(var y = 0; y < h; ++y) {
+	for(var x = 0; x < w; ++x)
+	    r[x] = color(trace(trace_depth, cam(x, y)));
+	put_row(0, y, r);
+    }
+}
+
+/* tracer main loop */
+function trace(depth, ray) {
+    var normal = model.normal;
+    var intersect = model.intersect;
+    var r = ray;
+    var path = [r];
+    for(var i = 1; i <= depth; ++i) {
+	var p = intersect(model, r);
+	if(!p) /* no intersection */
+	    break;
+	var n = normal(model, p);
+	r = reflect(r, p, n);
+	path[i] = r;
+    }
+    iterations += path.length;
+    return path;
+}
+
+/* colorization */
+var black = [1, 0.7, 0.7];
+var white = [0, 0.3, 0];
+function color_bw(path) {
+    var k = path.length;
+    var j = 1;
+    var min_d = 1;
+    for(var i = 2; i < k; ++i) {
+	var d = Math.sqrt(dot(dir(path[i]), dir(path[1])) + dot(pos(path[i]), pos(path[1])));
+	if(d < min_d) {
+	    min_d = d;
+	    j = i;
+	}
+    }
+    return path[j][0] < 0 ? black : white;
+}
+function color_z(path) {
+    var k = path.length;
+    var min_d = 1;
+    for(var i = 2; i < k; ++i) {
+	var d = Math.sqrt(dot(dir(path[i]), dir(path[1])) + dot(pos(path[i]), pos(path[1])));
+	if(d < min_d)
+	    min_d = d;
+    }
+    var t = 1 - (min_d+1)/2;
+    t = 1-t; t = t*t; t = 1-t;
+    return [t, t, t];
+}
+function color_jb(path) {
+    var k = path.length;
+    for(var i = 1; i < k; ++i) {
+	var x = dot(pos(path[i]), [1,0,0]);
+	if(x > (1-0.01)) {
+	    var q = i/k; q = 1-q;
+	    return [q, q, 0.25 + 0.75*q];
+	}
+    }
+    return [0,0,0.25]
+}
+var color_func;
+function color(path) {
+    if(path.length < 2)
+	return [0.4, 0.4, 0.4];
+    return color_func(path);
+}
+function init_color(s) {
+    color_func = {
+	bw: color_bw,
+	z: color_z,
+	jb: color_jb,
+    }[s];
+}
+
+/* camera */
+function init_cam(angle) {
+    var pi = 3.141592;
+    var a = angle*pi/180;
+    right = [ 1, 0, 0 ];
+    up =    [ 0, Math.cos(a), Math.sin(a) ];
+    look_at = cross(right, up);
+}
+function cam(x, y) {
+    var p = add(scale(2*x/w - 1, right), scale(2*y/h - 1, up));
+    return [ p[0], p[1], p[2],
+	     look_at[0], look_at[1], look_at[2] ];
+}
+function cam_reverse(p) {
+    return [ (dot(p, right) + 1)*w/2, (dot(p, up) + 1)*h/2 ];
+}
+
+/* model related computations */
+function make_sphere(r) {
+    return {
+	r: r,
+	intersect: sphere_intersect,
+	normal: sphere_normal,
+    };
+}
+var eps = 0.0001; /* ignore shorter rays */
+function sphere_intersect(model, ray) {
+    var l = dir(ray);
+    var o = pos(ray);
+    var r = model.r;
+
+    /* ray/sphere intersection formula,
+        see https://en.wikipedia.org/wiki/Line%E2%80%93sphere_intersection
+
+	c := the center of the sphere, [0, 0, 0] in our case.
+        d = [ -(l·(o-c)) +- sqrt((l·(o-c))² - |l|²(|o-c|² - r²)) ] / |l|²
+     */
+
+    var dotlo = dot(l, o);
+    var ll = absq(l);
+    var z = dotlo*dotlo - ll*(absq(o) - r*r);
+    if(z < 0)
+	return null;
+    z = Math.sqrt(z);
+    var d1 = -dotlo + z;
+    var d2 = -dotlo - z;
+
+    if(d1 > eps && (d1 < d2 || d2 < eps))
+	return add(o, scale(d1/ll, l));
+    if(d2 > eps && (d2 < d1 || d1 < eps))
+	return add(o, scale(d2/ll, l));
+    return null; /* no forward intersection */
+}
+function sphere_normal(model, p) {
+    return p;
+}
+
+function make_spheroid(a) {
+    var b = 1;
+    var s = b/a;
+    var f = 1-s; /* flattening */
+    var e = Math.sqrt(2*f - f*f); /* eccentricity */
+    var c = e*a; /* half focal distance */
+    return {
+	a: a,
+	r: b,
+	intersect: spheroid_intersect,
+	normal: spheroid_normal,
+	c: c,
+    }
+}
+function spheroid_intersect(model, ray) {
+    var a = model.a;
+    var r = [ ray[0], ray[1]/a, ray[2],
+	      ray[3], ray[4]/a, ray[5]];
+    var p = sphere_intersect(model, r);
+    if(!p)
+	return null;
+    return [ p[0], p[1]*a, p[2] ];
+}
+function spheroid_normal(model, p) {
+    var a = model.a;
+    var c = model.c;
+    var y = p[1];
+    var x = Math.sqrt(p[0]*p[0] + p[2]*p[2]);
+    var q = y / (x+c);
+    var n = [ p[0], x*q, p[2] ];
+    return scale(1/abs(n), n);
+}
+
+/* ray primitives */
+function dir(ray) {
+    return [ray[3], ray[4], ray[5]];
+}
+function pos(ray) {
+    return [ray[0], ray[1], ray[2]];
+}
+function reflect(ray, p, n) {
+    var d = dir(ray);
+    var r = add(d, scale(-2 * dot(d, n), n));
+    return [p[0], p[1], p[2],
+            r[0], r[1], r[2]];
+}
+
+/* vector primitives */
+function scale(a, p) {
+    return [
+	a*p[0],
+	a*p[1],
+	a*p[2],
+    ];
+}
+function dot(p, q) {
+    return p[0]*q[0] + p[1]*q[1] + p[2]*q[2];
+}
+function add(p, q) {
+    return [
+	p[0] + q[0],
+	p[1] + q[1],
+	p[2] + q[2],
+    ];
+}
+function absq(p) {
+    return dot(p, p);
+}
+function abs(p) {
+    return Math.sqrt(dot(p, p));
+}
+function cross(p, q) {
+    return [ p[1]*q[2] - p[2]*q[1],
+	     p[2]*q[0] - p[0]*q[2],
+	     p[0]*q[1] - p[1]*q[0] ];
+}
+
+/* graphics driver */
+var canvas, ctx;
+var pixel, pixel_data;
+var row, row_data;
+function init_graphics() {
+    canvas = document.getElementById("canvas");
+    ctx = canvas.getContext("2d");
+    w = canvas.width;
+    h = canvas.height;
+
+    row = ctx.createImageData(w, 1);
+    row_data = row.data;
+    for(var i = 0; i < w; ++i)
+	row_data[4*i + 3] = 255; /* alpha: fully opaque */
+}
+function put_row(x, y, r) {
+    for(var i = 0; i < w; ++i) {
+	var j = 4*i;
+	row_data[j + 0] = 255*r[i][0];
+	row_data[j + 1] = 255*r[i][1];
+	row_data[j + 2] = 255*r[i][2];
+    }
+    ctx.putImageData(row, x, y);
+}
+var screenshot;
+function capture() {
+    screenshot = ctx.getImageData(0, 0, w, h);
+}
+function restore() {
+    ctx.putImageData(screenshot, 0, 0);
+}
+function draw_path(path) {
+    restore();
+    ctx.beginPath();
+    p = cam_reverse(pos(path[0]));
+    ctx.moveTo(p[0], p[1]);
+    var k = path.length;
+    for(var i = 1; i < k; ++i) {
+	p = cam_reverse(pos(path[i]));
+	ctx.lineTo(p[0], p[1]);
+    }
+    ctx.strokeStyle = "#ffffff";
+    ctx.stroke();
+}
+
+/* dom utils */
+function get_input(n) {
+    return document.getElementById(n).value;
+}
+function status(s) {
+    document.getElementById("status").innerHTML = s;
+}
+
+</script>
+
+
+<hr/>
+<div>
+You see a raytraced image of a mirrored spheroid. You can save this html file to your disk and view it from there, or edit to change the coloring in really creative ways! <br>
+<br>
+See also:</div>
+<br>
+
+<div><a href="https://plus.google.com/+RefurioAnachro/posts/L6C4Kob2bNe">Ellipsoid: Glossary and coordinate system</a></div>
+
+<div><a href="https://plus.google.com/+RefurioAnachro/posts/Vmrx7GMRe2i">billiards in ellipses, Birkhoff, Poincare, and Poncelet</a></div>
+
+<div><a href="https://plus.google.com/+RefurioAnachro/posts/Q2nDr5phZfQ">The physical ellipse</a></div>
+
+<div><a href="https://plus.google.com/+RefurioAnachro/posts/KbcDG6zbSEw">more thoughts and images</a></div>
+
+<div><a href="https://plus.google.com/+RefurioAnachro/posts/QPdSyPHFYXa">Anatomy of the ellipse</a></div>
+<br>
+
+<div>Many thanks to the people who have been participating in the fun so far, especially to <a href="https://plus.google.com/108446499540248742090">+Bruce Elliott</a>, <a href="https://plus.google.com/114187364719055671781">+John Valentine</a>, and <a href="https://plus.google.com/117663015413546257905">+John Baez</a>, who has kindly put this topic on one of his idea magnets, his blog <i>Visual Insight</i>: <a href="http://blogs.ams.org/visualinsight/2015/04/15/sphere-in-mirrored-spheroid/">Sphere in Mirrored Spheroid</a> </div>
+
+
+<hr/>
+<div>this html file, and all pictures generated with it belong to the pulic domain.</div>
+by <a href="https://plus.google.com/+RefurioAnachro/">Refurio Anachro</a>
+
+</html>
