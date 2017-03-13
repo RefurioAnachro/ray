@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html xmlns="www.w3.org/1999/xhtml" xml:lang="en">
+<title>complex portrait explorer</title>
+<body>
+
+<div onclick="pin(get('param'))" id="param">
+  <h1>complex portrait plotter v0.1</h1>
+  <div onchange="refresh()">
+    <h2>function</h2>
+    <h3>f(z)</h3>
+    <textarea id="f">add(mul(z,z),c)</textarea>
+
+    <h2>coordinate views</h2>
+    <h3>center</h3>
+    <input id="center_re" type="number" value="0"><span class="sep">, </span><input id="center_im" type="number" value="0">
+    <h3>size</h3>
+    <input id="size_re" type="number" value="4"><span class="sep"> x </span><input id="size_im" type="number" value="4">
+
+    <h2>colors</h2>
+    <h3>rgb(z)</h3>
+    <textarea id="rgb">phase(z)</textarea>
+
+    <h2>iterations</h2>
+    <h3>maxiter</h3>
+    <input id="maxiter" type="number" value="1">
+    <h3>bailout</h3>
+    <input id="bailout" type="number" value="16">
+    <h3>trap(z)</h3>
+    <textarea id="trap">false</textarea>
+
+    <h2>image dimensions</h2>
+    <h3>width</h3>
+    <input id="w" type="number" value="480">
+    <h3>height</h3>
+    <input id="h" type="number" value="480">
+  </div>
+</div>
+
+<hr>
+
+<canvas id="main" width="480" height="480" onClick="point_event(event)">
+</canvas>
+<div id="copy">(c) 2017 by Refurio Anachro, this html file, and all pictures generated with it, belong to the public domain!</div>
+
+<div>
+  <i>c</i>
+  <input id="c" size=40 type="string" value="0,0"></span>
+</div>
+<div>
+  <i>d</i>
+  <input id="d" size=40 type="string" value="0,0"></span>
+</div>
+
+<input name="" type="submit" value="refresh" onclick="refresh()">
+
+<span class="point" id="c_label">&lt;- c</span>
+
+<style>
+  * {
+    font-size: 14pt;
+  }
+
+  .sep {
+    display: inline-block;
+    width: 1ex;
+  }
+
+  canvas {
+    border: 1px solid rgba(0, 0, 0, 0.2);
+  }
+  #param {
+    visibility: hidden;
+    position: absolute;
+    background-color: rgba(255, 255, 255, 0.75);
+    padding: 1em;
+    padding-top: 0px;
+    z-index: 2;
+  }
+  #param.pinned {
+    background-color: rgb(200, 200, 255);
+  }
+  #param.pinned ,
+  #param:hover {
+    visibility: visible;
+  }
+  #param + hr {
+    color: transparent;
+    background-color: transparent;
+    border: none;
+  }
+  #param + hr ,
+  #param > h1 {
+    font-style: italic;
+    height: 1em;
+    margin: 5pt;
+    letter-spacing: 3px;
+  }
+  #param h2 {
+    margin: 0px;
+    margin-top: 1ex;
+  }
+  #param h3 {
+    padding: 0px;
+    margin: 0px;
+  }
+  #param > h1 {
+    visibility: visible;
+    background-color: #eeeeee;
+    padding-left: 1em;
+    padding-right: 1em;
+  }
+  #param > div > h3 {
+    display: block;
+    font-size: 8pt;
+  }
+
+  .point {
+    position: absolute;
+    display: block;
+    visibility: visible;
+    background-color: rgba(255, 255, 255, 0.5);
+    top: 100px;
+    left: 100px;
+    z-index: 1;
+  }
+
+  input {
+    font-size: 16pt;
+  }
+  input[type=number] {
+    width: 10ex;
+  }
+
+  #copy {
+    font-size: 8pt;
+  }
+</style>
+<script type="text/javascript">
+
+/* complex functions */
+function of_string(s) {
+    return s.split(",").map(function(s) { return Number(s); });
+}
+function to_string(c) {
+    return ""+ c[0] +","+ c[1];
+}
+function add(w, z) {
+    return [
+	w[0] + z[0],
+	w[1] + z[1],
+    ];
+}
+function sub(w, z) {
+    return [
+	w[0] - z[0],
+	w[1] - z[1],
+    ];
+}
+function mul(w, z) {
+    return [
+	w[0]*z[0] - w[1]*z[1],
+	w[0]*z[1] + w[1]*z[0],
+    ];
+}
+function div(w, z) {
+    var v = w[0]*w[0] + w[1]*w[1]
+    return [
+	(w[0]*z[0] + w[1]*z[1]) / v,
+	(w[1]*z[0] - w[0]*z[1]) / v,
+    ];
+}
+function conj(z) {
+    return [
+	z[0],
+	-z[1],
+    ];
+}
+function neg(z) {
+    return [
+	-z[0],
+	-z[1],
+    ];
+}
+var one = [1, 0];
+var i = [0, 1];
+function absq(z) {
+    return z[0]*z[0] + z[1]*z[1];
+}
+function abs(z) {
+    return Math.sqrt(z[0]*z[0] + z[1]*z[1]);
+}
+function arg(c) {
+    return Math.atan2(c[1], c[0]);
+}
+function sqr(c) {
+    return [ c[0]*c[0] - c[1]*c[1], 2*c[0]*c[1] ];
+}
+function frac(x) {
+    return x - Math.floor(x);
+}
+function id(z) {
+    return z;
+}
+
+function make_trap() {
+    return function(c) {
+	return false;
+    };
+    var b = input("bailout");
+    b = b*b;
+    return function(c) {
+        return absq(c) > b;
+    };
+}
+function phase(z) {
+    var a = arg(z);
+    return hsv(a/2/Math.PI, 1, 1);
+}
+function bw(z) {
+    var a = arg(z);
+    a = 2*a;
+    a = Math.cos(a);
+    a = a*a*a;
+    a = (a+1)/2;
+    return hsv(0, 0, a);
+}
+function mkfn(n) {
+    var expr = input(n);
+    expr = "_ = function(z) { return "+ expr +"; }";
+    return eval(expr);
+}
+var pre;
+function make_pre() {
+    var a, b, c, d;
+    var center = [
+	input("center_re"),
+	input("center_im"),
+    ];
+    var size = [
+	input("size_re"),
+	input("size_im"),
+    ];
+    a = size[0];
+    c = size[1];
+    b = size[0]/2 - center[0];
+    d = size[1]/2 - center[1];
+    pre = function(z) {
+	return [
+	    a*z[0] - b,
+	    c*z[1] - d,
+	]
+    };
+    return pre;
+}
+
+/* dom functions */
+function get(n) {
+    return document.getElementById(n);
+}
+function input(n) {
+    return get(n).value;
+}
+function output(n, v) {
+    get(n).value = v;
+}
+function set_class(n, c) {
+    get(n).setAttribute("class", c);
+}
+function status(s) {
+    get("status").innerHTML = s;
+}
+function pin(node) {
+    if(event.target == node)
+	node.className = node.className ? "" : "pinned";
+}
+
+/* color functions */
+function hsv(h, s, v) {
+    var r, g, b, i, f, p, q, t;
+    s = s > 1 ? 1 : s < 0 ? 0 : s;
+    v = v > 1 ? 1 : v < 0 ? 0 : v;
+
+    if (s==0)
+	return [v, v, v];
+
+    h = frac(h)*6;
+    i = Math.floor(h);
+    f = h - i;
+    p = v * (1 - s);
+    q = v * (1 - s * f);
+    t = v * (1 - s * (1 - f));
+    switch (i) {
+	case 0: return [v, t, p];
+	case 1: return [q, v, p];
+	case 2: return [p, v, t];
+	case 3: return [p, q, v];
+	case 4: return [t, p, v]
+	case 5: return [v, p, q]
+    }
+}
+function hsv_rf(h, s, v) {
+    h = frac(h);
+    var c = v * s;
+    var m = v - c;
+    var p = Math.abs(Math.floor(h*6) % 2 - 1);
+    var x = c * (1 - p);
+    var r, g, b;
+    switch(Math.floor(h*6)) {
+    case 0: return [c+m, x+m, 0+m];
+    case 1: return [x+m, c+m, 0+m];
+    case 2: return [0+m, c+m, x+m];
+    case 3: return [0+m, x+m, c+m];
+    case 4: return [x+m, 0+m, c+m];
+    case 5: return [c+m, 0+m, x+m];
+    }
+}
+
+function point_event(e) {
+    output("c", pre([e.offsetX/w, e.offsetY/h]));
+    var l = get("c_label");
+    l.style.setProperty("left", ""+ (e.x) +"px");
+    l.style.setProperty("top", ""+ (e.y - l.clientHeight/2)  +"px");
+    refresh();
+}
+
+var canvas, ctx, row;
+var w, h;
+function clear() {
+    canvas = get("main");
+    ctx = canvas.getContext("2d");
+    canvas.setAttribute("width", w = input("w"));
+    canvas.setAttribute("height", h = input("h"));
+    row = ctx.createImageData(w, 1);
+    for(var i = 0; i < w; ++i)
+	row.data[4*i + 3] = 255; /* alpha: fully opaque */
+}
+function put_row(x, y, r) {
+    for(var i = 0; i < w; ++i) {
+	var j = 4*i;
+	row.data[j + 0] = 255*r[i][0];
+	row.data[j + 1] = 255*r[i][1];
+	row.data[j + 2] = 255*r[i][2];
+    }
+    ctx.putImageData(row, x, y);
+}
+function draw(f, rgb, pre, trap) {
+    var maxiter = input("maxiter");
+    var row = [];
+    var x, y;
+    for(y = 0; y < h; ++y) {
+	var im = (h-y)/h;
+	for(x = 0; x < w; ++x) {
+	    var re =  x/w;
+	    p = pre([re, im]);
+	    z = p;
+	    for(k = 0; k < maxiter && !trap(z); ++k)
+		z = f(z);
+	    row[x] = rgb(z);
+	    if(typeof row[x] == "undefined")
+		row[x] = [0, 0, 0];
+	}
+	put_row(0, y, row);
+    }
+}
+function refresh() {
+    clear();
+    c = of_string(input("c"));
+    d = of_string(input("d"));
+    draw(mkfn("f"), mkfn("rgb"), make_pre(), mkfn("trap"));
+}
+
+refresh();
+
+</script>
+</body>
+</html>
