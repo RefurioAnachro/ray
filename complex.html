@@ -1,161 +1,307 @@
 <!DOCTYPE html>
 <html xmlns="www.w3.org/1999/xhtml" xml:lang="en">
-<title>complex portrait explorer</title>
+<head>
+  <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+  <meta name="viewport" content="width=device-width, user-scalable=yes">
+  <title>phase portrait plotter v0.2</title>
+</head>
 <body>
 
-<div onclick="pin(get('param'))" id="param">
-  <h1>complex portrait plotter v0.1</h1>
-  <div onchange="refresh()">
-    <h2>function</h2>
-    <h3>f(z)</h3>
-    <textarea id="f">add(mul(z,z),c)</textarea>
+<h1>phase portrait plotter .2</h1>
 
-    <h2>coordinate views</h2>
-    <h3>center</h3>
-    <input id="center_re" type="number" value="0"><span class="sep">, </span><input id="center_im" type="number" value="0">
-    <h3>size</h3>
-    <input id="size_re" type="number" value="4"><span class="sep"> x </span><input id="size_im" type="number" value="4">
+<div id="portrait">
+  <div id="param"></div>
+  <canvas id="main" width="320" height="320" onClick="canvas_onclick(event)"></canvas>
+  <br>
+  <button onclick="refresh()">refresh</button> <span id="bookmark"></span>
+</div>
 
-    <h2>colors</h2>
-    <h3>rgb(z)</h3>
-    <textarea id="rgb">phase(z)</textarea>
+<div id="help">
+  <h1>Introduction</h1>
+  <div class="intro">
+    <p><i>portable phase portrait plotter</i></p>
+  </div>
+  <h1>Presets</h1>
+  <div class="preset"><a name="preset_mandelbrot"></a>
+    <h2>Mandelbrot set</h2>
+    The famous set by Benoit B. Mandelbrot. f(z) = z²+c
+  </div>
+  <div class="preset"><a name="preset_julia"></a>
+    <h2>Julia set</h2>
+    <p>Julia set for Mandelbrot´s formula.</p>
 
-    <h2>iterations</h2>
-    <h3>maxiter</h3>
-    <input id="maxiter" type="number" value="1">
-    <h3>bailout</h3>
-    <input id="bailout" type="number" value="16">
-    <h3>trap(z)</h3>
-    <textarea id="trap">false</textarea>
+    <p>f(z) = z²+p, z0 = c</p>
+  </div>
+  <div class="preset"><a name="preset_grid"></a>
+    <h2>grid coloring</h2>
+    <p>By default, the black rings are centered around every complex number whose coordinates are integers. Conformal mappings map circles to circles everywhere except at a finite set of points. Those are usually zeros, poles, and the zeros and poles of the derivative of f(z). At these points circles may not get get mapped to circles. Putting a circle around zero is pobably asking for that kind of trouble. So it may be a good idea to shift the grid a little.</p>
+  </div>
 
-    <h2>image dimensions</h2>
-    <h3>width</h3>
-    <input id="w" type="number" value="480">
-    <h3>height</h3>
-    <input id="h" type="number" value="480">
+  <div class="preset"><a name="preset_lambert"></a>
+    <h2>expansion of Lambert`s W function</h2>
+    <p>A simple simple example for a generalization of power series to include fractions. Lambert`s W consists of summands of the form z^n/(1+z^n). Taken as a Schema for constructing infinite series we may generalize this slightly and multiply each element by a number.</p>
+
+  <h1>Parameters</h1>
+  <div class="param"><a name="param_center"></a>
+    <h2>center</h2>
+    <p>Complex coordinate for the center of the view.</p>
+  </div>
+  <div class="param"><a name="param_radius"></a>
+    <h2>radius</h2>
+    <p>Make the view large enough that a circle of this radius fits snugly inside.</p>
+  </div>
+
+  <h1>Function library</h1>
+  <div class="lib"><a name="lib_add"></a>
+    <h2>add(a,b)</h2>
+    <p>Complex addition.</p>
   </div>
 </div>
 
-<hr>
-
-<canvas id="main" width="480" height="480" onClick="point_event(event)">
-</canvas>
-<div id="copy">(c) 2017 by Refurio Anachro, this html file, and all pictures generated with it, belong to the public domain!</div>
-
-<div>
-  <i>c</i>
-  <input id="c" size=40 type="string" value="0,0"></span>
+<div id="copy">
+  (c) 2017 by Refurio Anachro, this html file belongs to the public domain!
 </div>
-<div>
-  <i>d</i>
-  <input id="d" size=40 type="string" value="0,0"></span>
-</div>
-
-<input name="" type="submit" value="refresh" onclick="refresh()">
-
-<span class="point" id="c_label">&lt;- c</span>
 
 <style>
   * {
+    font-size: 12pt;
+  }
+  .tab h2 ,
+  input ,
+  textarea {
     font-size: 14pt;
-  }
-
-  .sep {
-    display: inline-block;
-    width: 1ex;
-  }
-
-  canvas {
-    border: 1px solid rgba(0, 0, 0, 0.2);
-  }
-  #param {
-    visibility: hidden;
-    position: absolute;
-    background-color: rgba(255, 255, 255, 0.75);
-    padding: 1em;
-    padding-top: 0px;
-    z-index: 2;
-  }
-  #param.pinned {
-    background-color: rgb(200, 200, 255);
-  }
-  #param.pinned ,
-  #param:hover {
-    visibility: visible;
-  }
-  #param + hr {
-    color: transparent;
-    background-color: transparent;
-    border: none;
-  }
-  #param + hr ,
-  #param > h1 {
-    font-style: italic;
-    height: 1em;
-    margin: 5pt;
-    letter-spacing: 3px;
-  }
-  #param h2 {
-    margin: 0px;
-    margin-top: 1ex;
-  }
-  #param h3 {
-    padding: 0px;
-    margin: 0px;
-  }
-  #param > h1 {
-    visibility: visible;
-    background-color: #eeeeee;
-    padding-left: 1em;
-    padding-right: 1em;
-  }
-  #param > div > h3 {
-    display: block;
-    font-size: 8pt;
-  }
-
-  .point {
-    position: absolute;
-    display: block;
-    visibility: visible;
-    background-color: rgba(255, 255, 255, 0.5);
-    top: 100px;
-    left: 100px;
-    z-index: 1;
-  }
-
-  input {
-    font-size: 16pt;
   }
   input[type=number] {
     width: 10ex;
   }
+  .sep {
+    display: inline-block;
+    width: 2.5ex;
+  }
+
+  h1 {
+    font-size: 12pt;
+  }
+  h2 {
+    font-size: 12pt;
+    padding-left: 0.5ex;
+    padding-right: 0.5ex;
+    padding-top: 0.5ex;
+  }
+  h3 {
+    font-size: 12pt;
+  }
+
+  p {
+    max-width: 60ex;
+    padding-left: 0.2ex;
+    padding-right: 0.2ex;
+  }
+
+  #param {
+    position: relative;
+  }
+  .tab {
+    display: inline;
+  }
+  .tab h2 {
+    display: inline;
+    border: 1px solid transparent;
+    font-weight: normal;
+  }
+  .tab h3 {
+    font-weight: normal;
+    margin-bottom: 0px;
+    font-size: 10pt;
+  }
+  .tab .box {
+    visibility: hidden;
+    z-index: -1;
+    position: absolute;
+    background-color: rgba(255,255,255, 0.5);
+    padding: 1ex;
+  }
+  .tab.open .box {
+    visibility: visible;
+    z-index: 1;
+  }
+  .tab.open h2 {
+    border: 1px solid rgba(0,0,0, 0.2);
+    border-top-left-radius: 10px;
+    border-bottom: none;
+  }
+  .tab.open h2 {
+    background-color: #ffbebe;
+  }
 
   #copy {
+    padding-left: 1ex;
+    background: white;
+    position: fixed;
+    padding-top: 0.5ex;
+    left: 0px;
+    bottom: 0px;
+    width: 100%;
+    border-top: 1px solid black;
     font-size: 8pt;
   }
+
+@media (max-width: 320px) {
+  body {
+    margin: 0px;
+    padding: 0px;
+    overflow: hidden;
+  }
+}
 </style>
 <script type="text/javascript">
 
-/* complex functions */
-function of_string(s) {
-    return s.split(",").map(function(s) { return Number(s); });
-}
-function to_string(c) {
-    return ""+ c[0] +","+ c[1];
-}
+var ui = {
+    "view": {
+	"center":     "complex",
+	"radius":     "func",
+	"width":      "int",
+	"height":     "int",
+//	"aspect":     "real",    "1" ],
+//	"supersample":"int",     "1" ],
+    },
+    "func": {
+	"z0":         "func",
+	"f(z)":       "func",
+	"c":          "complex",
+	"data":       "data",
+    },
+    "iter": {
+	"n":          "int",
+	"bailout":    "real",
+	"trap":       "func",
+    },
+    "color": {
+	"inside":     "func",
+	"outside":    "func",
+    },
+    "orbit": {
+	"length":     "int",
+	"start":      "func",
+    },
+};
+var presets = {
+    "default": {
+	// view
+	"center":  "0",
+	"radius":  "1.2",
+	"width":   "320",
+	"height":  "320",
+	// func
+	"z0":      "p",
+	"f(z)":    "add(mul(z,z),c)",
+	"c":       "0",
+	"data":    "",
+	// iter
+	"n":       "1",
+	"bailout": "2",
+	"trap":    "abs(z) > bailout",
+	// color
+	"inside":  "hsv(phase(z),1,1)",
+	"outside": "hsv(0, 0, axes(z))",
+	// orbit
+	"length":  "20",
+	"start":   "z0",
+
+	"n":       "0",
+	"trap":    "0",
+    },
+    "escape time": {
+	"n":       "8",
+	"bailout": "2",
+	"trap":    "abs(z) > bailout",
+	"inside":  "[0,0,0]",
+	"outside": "hsv(phase(z),1,1)",
+    },
+    "Mandelbrot": {
+	"f(z)":    "add(mul(z,z),p)",
+    },
+    "Julia": {
+	"f(z)":    "add(mul(z,z),c)",
+    },
+    "data driven Möbius function": {
+	"f(z)": "div(add(mul(d(0),z),d(1)),add(mul(d(2),z),d(3)))",
+	"data": "1 0\n1 1\n1 1\n0 1",
+    },
+    "Taylor expansion for exp(z)": {
+	"f(z)": "add(z,q=div(mul(q,p),[k+1,0]))",
+	"z0":   "q=[1,0]",
+	"n":    "4",
+    },
+    "expansion for Lambert´s W": {
+	"f(z)": "add(z,div((q=mul(q,p)), sub([1,0],q)))",
+	"z0":   "q=p",
+	"n":    "8",
+    },
+    "data driven Puiseux series": {
+	"f(z)": "add(z,mul(d(k),pow(p,[k/n, 0])))",
+	"z0":   "p",
+	"data": "1 0",
+    },
+    "identity (colorwheel)": {
+	"z0":      "p",
+	"n":       "0",
+    },
+    "function (simple)": {
+	"n":       "1",
+    },
+    "phase portrait": {
+	"inside":  "hsv(phase(z), 1, 1)",
+    },
+    "axes (b&w)": {
+	"inside":  "hsv(0, 0, axes(z))",
+    },
+    "grid": {
+	"inside":  "hsv(phase(z), 1, 1-annulus(0.5,0.75,grid(1,1,z)))",
+    },
+    "red/blue": {
+	"inside":  "rgb((abs(z)<1) ? 0 : sharp(abs(inv(z))), 0, (abs(z)>1) ? 0 : sharp(abs(z)))",
+    },
+    "domain coloring": {
+	"inside": "domain(0.1, 1, z)",
+    },
+    "800x600": {
+	"width":  "800",
+	"height": "600",
+    },
+};
+
+/* vector functions */
 function add(w, z) {
-    return [
-	w[0] + z[0],
-	w[1] + z[1],
-    ];
+    var r = [];
+    for(var i in w)
+	r[i] = w[i] + z[i];
+    return r;
 }
 function sub(w, z) {
-    return [
-	w[0] - z[0],
-	w[1] - z[1],
-    ];
+    var r = [];
+    for(var i in w)
+	r[i] = w[i] - z[i];
+    return r;
 }
+function smul(s, v) {
+    var r = [];
+    for(var i in v)
+	r[i] = s*v[i];
+    return r;
+}
+
+/* complex functions */
+var i = [0, 1];
+
+function re(z) {
+    return z[0];
+}
+function im(z) {
+    return z[1];
+}
+
+// can use vector add() and sub()
 function mul(w, z) {
     return [
 	w[0]*z[0] - w[1]*z[1],
@@ -163,10 +309,17 @@ function mul(w, z) {
     ];
 }
 function div(w, z) {
-    var v = w[0]*w[0] + w[1]*w[1]
+    var v = z[0]*z[0] + z[1]*z[1]
     return [
 	(w[0]*z[0] + w[1]*z[1]) / v,
 	(w[1]*z[0] - w[0]*z[1]) / v,
+    ];
+}
+function inv(z) {
+    var v = z[0]*z[0] + z[1]*z[1]
+    return [
+	z[0] / v,
+	-z[1] / v,
     ];
 }
 function conj(z) {
@@ -181,8 +334,6 @@ function neg(z) {
 	-z[1],
     ];
 }
-var one = [1, 0];
-var i = [0, 1];
 function absq(z) {
     return z[0]*z[0] + z[1]*z[1];
 }
@@ -195,86 +346,67 @@ function arg(c) {
 function sqr(c) {
     return [ c[0]*c[0] - c[1]*c[1], 2*c[0]*c[1] ];
 }
-function frac(x) {
-    return x - Math.floor(x);
-}
 function id(z) {
     return z;
 }
-
-function make_trap() {
-    return function(c) {
-	return false;
-    };
-    var b = input("bailout");
-    b = b*b;
-    return function(c) {
-        return absq(c) > b;
-    };
+function exp(z) {
+    var e = Math.exp(z[0])
+    return [ e*Math.cos(z[1]), e*Math.sin(z[1]) ];
 }
+function ln(z) {
+    return [ Math.log(abs(z)), arg(z) ];
+}
+function pow(b, e) {
+    return exp(mul(e,ln(b)))
+}
+
 function phase(z) {
-    var a = arg(z);
-    return hsv(a/2/Math.PI, 1, 1);
+    return arg(z)/2/Math.PI;
 }
-function bw(z) {
-    var a = arg(z);
-    a = 2*a;
-    a = Math.cos(a);
-    a = a*a*a;
-    a = (a+1)/2;
-    return hsv(0, 0, a);
+function sharp(t) {
+    var a = (2*t+2) % 2 - 1;
+    a = Math.abs(2*a)-1;
+    a = Math.asin(a)/Math.PI+0.5;
+    return a;
 }
-function mkfn(n) {
-    var expr = input(n);
-    expr = "_ = function(z) { return "+ expr +"; }";
-    return eval(expr);
+function axes(z) {
+    return sharp(arg(z)/Math.PI);
 }
-var pre;
-function make_pre() {
-    var a, b, c, d;
-    var center = [
-	input("center_re"),
-	input("center_im"),
-    ];
-    var size = [
-	input("size_re"),
-	input("size_im"),
-    ];
-    a = size[0];
-    c = size[1];
-    b = size[0]/2 - center[0];
-    d = size[1]/2 - center[1];
-    pre = function(z) {
-	return [
-	    a*z[0] - b,
-	    c*z[1] - d,
-	]
-    };
-    return pre;
+function grid(d1, d2, z) {
+    return smul(2, [ frac(z[0]/d1+0.5)-0.5, frac(z[1]/d2+0.5)-0.5 ]);
+}
+function annulus(r1, r2, z) {
+    var r = abs(z);
+    return  (r < r2 && r > r1) ? 1 : 0;
 }
 
-/* dom functions */
-function get(n) {
-    return document.getElementById(n);
+/* real functions */
+function frac(x) {
+    return x - Math.floor(x);
 }
-function input(n) {
-    return get(n).value;
+function fac(i) {
+    var r = 1;
+    for(var j = 2; j <= i; ++j)
+	r *= j;
+    return r;
 }
-function output(n, v) {
-    get(n).value = v;
+
+/* data functions */
+function nan_to_zero(t) {
 }
-function set_class(n, c) {
-    get(n).setAttribute("class", c);
-}
-function status(s) {
-    get("status").innerHTML = s;
-}
-function pin(node) {
-    if(event.target == node)
-	node.className = node.className ? "" : "pinned";
+function d(i, j) {
+    if(typeof i == "undefined")
+	i = k;
+    if(typeof j == "undefined")
+	j = 0;
+    i = i % data.length;
+    return [ Number(data[i][j*2]), Number(data[i][j*2+1]) ];
 }
 
 /* color functions */
+function rgb(r, g, b) {
+    return [ r, g, b ];
+}
 function hsv(h, s, v) {
     var r, g, b, i, f, p, q, t;
     s = s > 1 ? 1 : s < 0 ? 0 : s;
@@ -298,44 +430,195 @@ function hsv(h, s, v) {
 	case 5: return [v, p, q]
     }
 }
-function hsv_rf(h, s, v) {
-    h = frac(h);
-    var c = v * s;
-    var m = v - c;
-    var p = Math.abs(Math.floor(h*6) % 2 - 1);
-    var x = c * (1 - p);
-    var r, g, b;
-    switch(Math.floor(h*6)) {
-    case 0: return [c+m, x+m, 0+m];
-    case 1: return [x+m, c+m, 0+m];
-    case 2: return [0+m, c+m, x+m];
-    case 3: return [0+m, x+m, c+m];
-    case 4: return [x+m, 0+m, c+m];
-    case 5: return [c+m, 0+m, x+m];
-    }
+function domain(r0, r1, z) {
+    var a = abs(z);
+    return hsv(
+	phase(z),
+	a<r1 ? 1 : (1 - frac(a/r1)), // a<r1 ? 1 : (1 - frac(Math.log(a/r1)))
+	a>r1 ? 1 : (frac(a/r0))
+    );
 }
 
-function point_event(e) {
-    output("c", pre([e.offsetX/w, e.offsetY/h]));
-    var l = get("c_label");
-    l.style.setProperty("left", ""+ (e.x) +"px");
-    l.style.setProperty("top", ""+ (e.y - l.clientHeight/2)  +"px");
-    refresh();
+/* dom functions */
+function get(n) {
+    return document.getElementById(n);
+}
+function set_class(n, c) {
+    get(n).setAttribute("class", c);
+}
+function read(id) {
+    var r = get(id);
+    if(typeof r != "undefined" && r != null)
+	return r.value;
+    console.error("read("+ id +"): undefined");
+    return null;
+}
+function read_js(id) {
+    var expr = read(id);
+    expr = "_ = function(z) { return "+ expr +"; }";
+    return eval(expr);
+}
+function read_complex(id) {
+    var s = read(id);
+    var m;
+    if(m = s.match(/^ *([0-9.Ee+-]+) *[+] *([0-9.Ee+-]+)i *$/))
+	return [ Number(m[1]), Number(m[2]) ];
+    if(m = s.match(/^ *([0-9.Ee+-]+) *[-] *([0-9.Ee+-]+)i *$/))
+	return [ Number(m[1]), -Number(m[2]) ];
+    if(m = s.match(/^ *([0-9.Ee+-]+)i *[+] *([0-9.Ee+-]+) *$/))
+	return [ Number(m[2]), Number(m[1]) ];
+    if(m = s.match(/^ *([0-9.Ee+-]+)i *[-] *([0-9.Ee+-]+) *$/))
+	return [ Number(m[2]), -Number(m[1]) ];
+    if(m = s.match(/^ *([0-9.Ee+-]+) *$/))
+	return [ Number(m[1]), 0 ];
+    if(m = s.match(/^ *([0-9.Ee+-]+)i *$/))
+	return [ 0, Number(m[1])];
+}
+function read_real(id) {
+    return Number(read(id));
+}
+function read_int(id) {
+    return Math.floor(read_real(id));
+}
+function read_bool(id) {
+    return read(id);
+}
+function read_data(id) {
+    var r = read(id).split("\n");
+    for(var i in r) {
+	r[i] = r[i].split(" ");
+	for(var j in r[i])
+	    r[i][j] = Number(r[i][j])
+    }
+    return r;
+}
+function write(id, value) {
+    var node = get(id);
+    if(typeof node == "undefined" || node == null) 
+	console.error("write("+ id +"): undefined")
+    node.value = value;
+}
+function complex_to_string(value) {
+    var re = Number(value[0]).toPrecision(3);
+    var im = Number(value[1]).toPrecision(3);
+    return ""+ re +" + "+ im+"i";
+}
+function write_complex(id, value) {
+    write(id, complex_to_string(value));
+}
+
+function render_textarea(name, value) {
+    return "<textarea id='"+ name +"'>"+ value +"</textarea>\n";
+}
+function render_input(name, value) {
+    return "<input id='"+ name +"' value='"+ value +"'>\n";
+}
+function render_int(name, value) {
+    return "<input id='"+ name +"' type='number' value='"+ value +"'>\n";
+}
+function render_checkbox(name, value) {
+    return "<checkbox id='"+ name + (value ? " checked" : "") +">\n";
+}
+var input_types = {
+    func: {
+	widget: render_textarea,
+	input: read_js,
+    },
+    complex: {
+	widget: render_input,
+	input: read_complex,
+    },
+    real: {
+	widget: render_input,
+	input: read_real,
+    },
+    int: {
+	widget: render_int,
+	input: read_int,
+    },
+    bool: {
+	widget: render_checkbox,
+	input: read_bool,
+    },
+    data: {
+	widget: render_textarea,
+	input: read,
+    },
+};
+function input(n) {
+    for(tab in ui)
+	for(name in ui[tab])
+	    if(name == n) {
+		var t = ui[tab][name];
+		return input_types[t].input(name);
+	    }
+    console.error("input("+ n +"): not found");
+}
+function help_link(id) {
+    return document.getElementsByName(id).length ? "<a href='#"+ id +"'>?</a>" : "";
+}
+function render_widget(tab, name, decl) {
+    var t = decl, def = presets.initial[name];
+    return input_types[t].widget(name, def) + help_link("param_"+ name) +"\n";
+}
+function render_box(b) {
+    return "<div class='box'>\n"+ b +"</div>\n";
+}
+function render_tab(t) {
+    return "<div class='tab'>\n"+ t +"</div>\n";
+}
+function pin(event) {
+    var n = event.target.parentNode;
+    var p = n.parentNode;
+    var t = n.className == "tab open";
+    for(m = p.firstElementChild; m; m = m.nextElementSibling)
+	m.className = "tab";
+    n.className = t ? "tab" : "tab open";
+}
+function render_presets() {
+    var t = "<h2 onclick='pin(event)'>preset</h2>\n";
+    var r = "";
+    for(var p in presets)
+	r += "<button onclick='apply(\""+ p +"\")'>"+ p +"</button><br/>\n";
+    return render_tab(t + render_box(r));
+}
+function render_param() {
+    var r = "";
+    for(var tab in ui) {
+	var t = "<h2 onclick='pin(event)'>"+ tab +"</h2>\n";
+	var b = "";
+	for(var name in ui[tab]) {
+	    b += "<h3>"+ name +"</h3>\n";
+	    b += render_widget(tab, name, ui[tab][name]) + "\n";
+	}
+	r += render_tab(t + render_box(b));
+    }
+    r += render_presets();
+    return "<div class='param' onchange='refresh()'>\n"+ r +"</div>\n"
+}
+function render() {
+    get("param").outerHTML = render_param();
+}
+function apply(p) {
+    for(var name in presets[p])
+	write(name, presets[p][name]);
 }
 
 var canvas, ctx, row;
-var w, h;
-function clear() {
+var width, height;
+function clear(w, h) {
+    width = w;
+    height = h;
     canvas = get("main");
     ctx = canvas.getContext("2d");
-    canvas.setAttribute("width", w = input("w"));
-    canvas.setAttribute("height", h = input("h"));
-    row = ctx.createImageData(w, 1);
-    for(var i = 0; i < w; ++i)
+    canvas.setAttribute("width", width);
+    canvas.setAttribute("height", height);
+    row = ctx.createImageData(width, 1);
+    for(var i = 0; i < width; ++i)
 	row.data[4*i + 3] = 255; /* alpha: fully opaque */
 }
 function put_row(x, y, r) {
-    for(var i = 0; i < w; ++i) {
+    for(var i = 0; i < width; ++i) {
 	var j = 4*i;
 	row.data[j + 0] = 255*r[i][0];
 	row.data[j + 1] = 255*r[i][1];
@@ -343,32 +626,179 @@ function put_row(x, y, r) {
     }
     ctx.putImageData(row, x, y);
 }
-function draw(f, rgb, pre, trap) {
-    var maxiter = input("maxiter");
-    var row = [];
-    var x, y;
-    for(y = 0; y < h; ++y) {
-	var im = (h-y)/h;
-	for(x = 0; x < w; ++x) {
-	    var re =  x/w;
-	    p = pre([re, im]);
-	    z = p;
-	    for(k = 0; k < maxiter && !trap(z); ++k)
-		z = f(z);
-	    row[x] = rgb(z);
-	    if(typeof row[x] == "undefined")
-		row[x] = [0, 0, 0];
-	}
-	put_row(0, y, row);
-    }
+function capture() {
+    return ctx.getImageData(0, 0, width, height);
 }
-function refresh() {
-    clear();
-    c = of_string(input("c"));
-    d = of_string(input("d"));
-    draw(mkfn("f"), mkfn("rgb"), make_pre(), mkfn("trap"));
+function restore(data) {
+    ctx.putImageData(data, 0, 0);
+}
+var orbit;
+function draw_orbit_style(style, xo, yo) {
+    ctx.beginPath();
+    var p = to_pixel(orbit[0]);
+    ctx.moveTo(p[0] + xo, p[1] + yo)
+    var n = orbit.length;
+    for(var k = 0; k < n; ++k) {
+	p = to_pixel(orbit[k]);
+	ctx.lineTo(p[0] + xo, p[1] + yo);
+    }
+    ctx.strokeStyle = style;
+    ctx.stroke();
+}
+function draw_orbit() {
+    draw_orbit_style("#000000", 1, 1)
+    draw_orbit_style("#ffffff", 0, 0)
+}
+function draw_cross(xy, style) {
+    var r = 12;
+    ctx.beginPath();
+    ctx.moveTo(xy[0]-r, xy[1]);
+    ctx.lineTo(xy[0]+r, xy[1]);
+    ctx.moveTo(xy[0],   xy[1]-r);
+    ctx.lineTo(xy[0],   xy[1]+r);
+    ctx.strokeStyle = style;
+    ctx.stroke();
+}
+function draw_coord(xy) {
+    draw_cross([xy[0]+1, xy[1]+1], "#000000");
+    draw_cross(xy, "#ffffff");
+}
+function draw_text(xy, text) {
+    ctx.font = '12px sans';
+    ctx.fillStyle = "#000000";
+    ctx.fillText(text, xy[0] + 3, xy[1] - 2);
+    ctx.fillStyle = "#ffffff";
+    ctx.fillText(text, xy[0] + 2, xy[1] - 3);
+}
+var screen = null;
+function draw_rulers() {
+    draw_orbit();
+    var z = to_pixel(c), l = complex_to_string(c);
+    draw_coord(z);
+    draw_text(z, l);
 }
 
+function compute_orbit() {
+    var start = input("start");
+    var n = input("length");
+    p = c;
+    z = z0(c);
+    orbit = [z];
+    for(k = 0; k < n; ++k) {
+	z = f(z);
+	orbit[k+1] = z;
+    }
+}
+var k, p, y, z;
+var draw_timeout;
+function draw() {
+    var row = [];
+    var t = false, u = y + 4;
+    if(u > n)
+	u = n;
+    for(var x = 0; x < width; ++x) {
+	p = of_pixel([x, y]);
+	z = z0(p);
+	for(k = 0; k < n && !(t = trap(z)); ++k)
+	    z = f(z);
+	row[x] = t ? outside(z) : inside(z);
+	if(typeof row[x] == "undefined")
+	    row[x] = [0, 0, 0];
+    }
+    ++y;
+    put_row(0, y, row);
+    if(y < height) {
+	draw_timeout = setTimeout(draw, 0);
+	return
+    }
+    screen = capture();
+
+    compute_orbit();
+    draw_rulers();
+}
+function stop() {
+    if(draw_timeout)
+	clearTimeout(draw_timeout);
+}
+
+var n;
+var f, z0, inside, outside, trap;
+var c, d, bailout, of_pixel, to_pixel;
+function refresh() {
+    stop();
+    var w = read("width");
+    var h = read("height");
+    if(width != w || height != h)
+	clear(w, h);
+
+    var center = input("center");
+    var radius = Number(read("radius"));
+    var m = height < width ? height : width;
+    var a00 =  2*radius/m, a01 = + center[0] - radius*width/m;
+    var a10 = -2*radius/m, a11 = + center[1] + radius*height/m;
+    of_pixel = function(z) {
+	return [
+	    a00*z[0] + a01,
+	    a10*z[1] + a11,
+	]
+    };
+    to_pixel = function(z) {
+	return [
+	    Math.floor((z[0] - a01)/a00),
+	    Math.floor((z[1] - a11)/a10),
+	];
+    };
+
+    data = read_data("data");
+    n = input("n");
+    bailout = input("bailout");
+    f = input("f(z)");
+    z0 = input("z0");
+    c = input("c");
+    inside = input("inside");
+    outside = input("outside");
+    trap = input("trap");
+
+    y = 0;
+    draw();
+    write_args();
+}
+
+function canvas_onclick(event) {
+    stop();
+    c = of_pixel([ event.offsetX, event.offsetY ]);
+    console.log(c);
+    write_complex("c", c);
+    compute_orbit();
+    restore(screen);
+    draw_rulers();
+    write_args();
+}
+
+function read_args() {
+    presets.initial = presets.default;
+    var r = window.location.hash.substr(1);
+    r = decodeURIComponent(r);
+    r = r.split("&");
+    for(i in r) {
+	var s = r[i].split("=");
+	var n = s.shift();
+	var v = s.join("=");
+	if(v != presets.default)
+	    presets.initial[n] = v;
+    }
+}
+function write_args() {
+    var r = [];
+    for(var s in ui)
+	for(name in ui[s])
+	    r.push(""+ name +"="+ get(name).value);
+    r = encodeURIComponent(r.join("&"));
+    get("bookmark").innerHTML = "<a href='#"+ r +"'>bookmark</a>";
+}
+
+read_args();
+render();
 refresh();
 
 </script>
