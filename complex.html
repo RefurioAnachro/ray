@@ -133,6 +133,17 @@
   .tab.open h2 {
     background-color: #ffbebe;
   }
+  .param > .blind {
+    visibility: hidden;
+    position: fixed;
+    width: 100%;
+    height: 100%;
+    display: block;
+    background-color: transparent;
+  }
+  .param > .tab.open ~ .blind {
+    visibility: visible;
+  }
 
   #copy {
     padding-left: 1ex;
@@ -567,12 +578,17 @@ function render_box(b) {
 function render_tab(t) {
     return "<div class='tab'>\n"+ t +"</div>\n";
 }
+function close_tabs() {
+    var node = get("param");
+    for(var m = node.firstElementChild; m; m = m.nextElementSibling)
+	if(m.className == "tab open")
+	    m.className = "tab";
+}
 function pin(event) {
     var n = event.target.parentNode;
     var p = n.parentNode;
     var t = n.className == "tab open";
-    for(m = p.firstElementChild; m; m = m.nextElementSibling)
-	m.className = "tab";
+    close_tabs();
     n.className = t ? "tab" : "tab open";
 }
 function render_presets() {
@@ -594,10 +610,12 @@ function render_param() {
 	r += render_tab(t + render_box(b));
     }
     r += render_presets();
-    return "<div class='param' onchange='refresh()'>\n"+ r +"</div>\n"
+    r += "<span class='blind' onclick='close_tabs(); event.stopPropagation()'>&nbsp;</span>\n";
+    return "<div class='param' id='param' onchange='refresh()'>\n"+ r +"</div>\n"
 }
 function render() {
     get("param").outerHTML = render_param();
+;
 }
 function apply(p) {
     for(var name in presets[p])
