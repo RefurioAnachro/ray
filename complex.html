@@ -670,12 +670,13 @@ function render_param() {
 function render() {
     get("param").outerHTML = render_param();
 }
-function apply(s, p) {
-    console.log("apply("+ s +","+ p +")");
-    for(var name in presets[s][p]) {
-	console.log(""+ s +"/"+ name +" = "+ presets[s][p][name]);
-	write(name, presets[s][p][name]);
+function apply(tab, p) {
+    console.log("apply("+ tab +","+ p +")");
+    for(var name in presets[tab][p]) {
+	console.log(""+ tab +"/"+ name +" = "+ presets[tab][p][name]);
+	write(name, presets[tab][p][name]);
     }
+    refresh(tab);
 }
 
 var canvas, ctx, row;
