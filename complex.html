@@ -13,7 +13,7 @@
   <div id="param"></div>
   <canvas id="main" width="320" height="320" onClick="canvas_onclick(event)"></canvas>
   <br>
-  <button onclick="refresh()">refresh</button> <span id="bookmark"></span>
+  <button onclick="refresh()">refresh</button> right click: <span id="bookmark"></span> <span id="save">save</span>
 </div>
 
 <div id="help">
@@ -696,6 +696,7 @@ function put_row(x, y, r) {
     ctx.putImageData(row, x, y);
 }
 function capture() {
+    get("save").innerHTML = "<a href='"+ canvas.toDataURL("image/png") +"'>save</a>\n";
     return ctx.getImageData(0, 0, width, height);
 }
 function restore(data) {
