@@ -71,6 +71,9 @@
   textarea {
     font-size: 14pt;
   }
+  textarea {
+    height: 4em;
+  }
   input[type=number] {
     width: 10ex;
   }
@@ -133,6 +136,7 @@
   .tab.open h2 {
     background-color: #ffbebe;
   }
+
   .param > .blind {
     visibility: hidden;
     position: fixed;
@@ -143,6 +147,12 @@
   }
   .param > .tab.open ~ .blind {
     visibility: visible;
+  }
+
+  textarea#info {
+    font-size: 10pt;
+    width: 40ex;
+    height: 25em;
   }
 
   #copy {
@@ -195,6 +205,9 @@ var ui = {
 	"length":     "int",
 	"start":      "func",
     },
+    "info": {
+	"info":       "text",
+    },
 };
 var presets = {
     "default": {
@@ -219,8 +232,13 @@ var presets = {
 	"length":  "20",
 	"start":   "z0",
 
-	"n":       "0",
-	"trap":    "0",
+	// info
+	"info":    [
+"A portable phase portrait plotter for iterated complex functions.",
+"    (c) 2017 by Refurio Anachro",
+"",
+"This file belongs to the public domain!",
+	    ].join("\n"),
     },
     "escape time": {
 	"n":       "8",
@@ -552,6 +570,10 @@ var input_types = {
 	input: read_bool,
     },
     data: {
+	widget: render_textarea,
+	input: read,
+    },
+    text: {
 	widget: render_textarea,
 	input: read,
     },
