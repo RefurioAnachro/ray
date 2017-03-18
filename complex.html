@@ -13,7 +13,7 @@
   <div id="param"></div>
   <canvas id="main" width="320" height="320" onClick="canvas_onclick(event)"></canvas>
   <br>
-  <button onclick="refresh()">refresh</button> right click: <span id="bookmark"></span> <span id="save">save</span>
+  <button onclick="refresh('view')">refresh</button> right click: <span id="bookmark"></span> <span id="save">save</span>
 </div>
 
 <div id="help">
@@ -183,8 +183,6 @@ var ui = {
 	"radius":     "func",
 	"width":      "int",
 	"height":     "int",
-//	"aspect":     "real",    "1" ],
-//	"supersample":"int",     "1" ],
     },
     "func": {
 	"z0":         "func",
@@ -208,6 +206,14 @@ var ui = {
     "info": {
 	"info":       "text",
     },
+};
+var ui_refresh = {
+    "view": refresh_func,
+    "func": refresh_func,
+    "iter": refresh_func,
+    "color": refresh_func,
+    "orbit": refresh_orbit,
+    "info": refresh_info,
 };
 var presets = {
     "view": {
@@ -624,7 +630,7 @@ function render_box(b) {
     return "<div class='box'>\n"+ b +"</div>\n";
 }
 function render_tab(n, t) {
-    return "<div class='tab'>\n"+ t +"</div>\n";
+    return "<div class='tab' onchange='refresh(\""+ n +"\")'>\n"+ t +"</div>\n";
 }
 function close_tabs() {
     var node = get("param");
@@ -656,14 +662,13 @@ function render_param() {
 	    b += render_widget(tab, name, ui[tab][name]) + "\n";
 	}
 	b += "<hr/>"+ render_presets(tab);
-	r += render_tab(name, t + render_box(b));
+	r += render_tab(tab, t + render_box(b));
     }
     r += "<span class='blind' onclick='close_tabs(); event.stopPropagation()'>&nbsp;</span>\n";
-    return "<div class='param' id='param' onchange='refresh()'>\n"+ r +"</div>\n"
+    return "<div class='param' id='param'>\n"+ r +"</div>\n"
 }
 function render() {
     get("param").outerHTML = render_param();
-;
 }
 function apply(s, p) {
     console.log("apply("+ s +","+ p +")");
@@ -700,7 +705,8 @@ function capture() {
     return ctx.getImageData(0, 0, width, height);
 }
 function restore(data) {
-    ctx.putImageData(data, 0, 0);
+    if(data)
+	ctx.putImageData(data, 0, 0);
 }
 var orbit;
 function draw_orbit_style(style, xo, yo) {
@@ -782,9 +788,7 @@ function draw() {
 	return
     }
     screen = capture();
-
-    compute_orbit();
-    draw_rulers();
+    refresh_orbit();
 }
 function stop() {
     if(draw_timeout)
@@ -794,7 +798,7 @@ function stop() {
 var n;
 var f, z0, inside, outside, trap;
 var c, d, bailout, of_pixel, to_pixel;
-function refresh() {
+function refresh_func() {
     stop();
     var w = read("width");
     var h = read("height");
@@ -831,18 +835,26 @@ function refresh() {
 
     y = 0;
     draw();
-    write_args();
+//    refresh_orbit();
+}
+function refresh_orbit() {
+    compute_orbit();
+    restore(screen);
+    draw_rulers();
+    refresh_info();
+}
+function refresh_info() {
+    write_bookmark();
+}
+function refresh(tab) {
+    ui_refresh[tab]();
 }
 
 function canvas_onclick(event) {
     stop();
     c = of_pixel([ event.offsetX, event.offsetY ]);
-    console.log(c);
     write_complex("c", c);
-    compute_orbit();
-    restore(screen);
-    draw_rulers();
-    write_args();
+    refresh_orbit();
 }
 
 function read_args() {
@@ -860,7 +872,7 @@ function read_args() {
 	    presets.view.initial[n] = v;
     }
 }
-function write_args() {
+function write_bookmark() {
     var r = [];
     for(var s in ui)
 	for(name in ui[s])
@@ -872,7 +884,7 @@ function write_args() {
 render();
 apply("view", "default");
 read_args();
-refresh();
+refresh("view");
 
 </script>
 </body>
