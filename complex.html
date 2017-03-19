@@ -689,7 +689,8 @@ function compute_orbit() {
     var start = input("start");
     n = input("length");
     p = c;
-    var z = start();
+    z0 = z0_func();
+    z = start();
     orbit = [z];
     for(var j = 0; j < n; ++j) {
 	k = [j, 0];
@@ -697,13 +698,14 @@ function compute_orbit() {
 	orbit[j+1] = z;
     }
 }
-var k, p, y, z;
+var k, p, y, z, z0;
 var draw_timeout;
 function draw() {
     var row = [];
     for(var x = 0; x < width; ++x) {
 	p = of_pixel([x, y]);
-	var z = z0();
+	z0 = z0_func();
+	z = z0;
 	for(var j = 0; j < n[0] && !(t = trap(z)); ++j) {
 	    k = [j, 0];
 	    z = f(z);
@@ -730,7 +732,7 @@ function stop() {
 
 <script type="text/javascript">
 var n;
-var f, z0, inside, outside, trap;
+var f, z0, z0_func, inside, outside, trap;
 var b, c, d, of_pixel, to_pixel;
 function refresh_func() {
     stop();
@@ -762,7 +764,7 @@ function refresh_func() {
     k = [0,0];
     b = [input("b"), 0];
     f = input("f(z)");
-    z0 = input("z0");
+    z0_func = input("z0");
     c = input("c");
     inside = input("inside");
     outside = input("outside");
@@ -899,7 +901,7 @@ var presets = {
 	    "outside": "hsv(0, 0, axes(z))",
 	    // orbit
 	    "length":  "20",
-	    "start":   "z0()",
+	    "start":   "z0",
 
 	    // info
 	    "info":    [
