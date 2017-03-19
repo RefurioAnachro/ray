@@ -9,7 +9,7 @@
 
 <div id="portrait">
   <div id="param"></div>
-  <canvas id="main" width="320" height="320" onclick="canvas_onclick(event)" onmousedown="window.onmousemove=canvas_onclick" onmouseup="window.onmousemove=null"></canvas>
+  <canvas id="main" width="320" height="320" onclick="canvas_onclick(event)" onmousedown="window.onmousemove=canvas_onclick" onmouseup="window.onmousemove=null" ontouchmove="canvas_onclick(event)"></canvas>
   <br>
   <button onclick="refresh('view')">refresh</button> right click: <span id="bookmark"></span> <span id="save">save</span>
 </div>
