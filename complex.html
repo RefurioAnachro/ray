@@ -117,164 +117,10 @@
   }
 }
 </style>
+
+<h1>vector functions</h1>
+add(u,v) sub(u,v) smul(r,v)
 <script type="text/javascript">
-
-var ui = {
-    "view": {
-	"center":     "complex",
-	"radius":     "func",
-	"width":      "int",
-	"height":     "int",
-    },
-    "func": {
-	"z0":         "func",
-	"f(z)":       "func",
-	"c":          "complex",
-	"data":       "data",
-    },
-    "iter": {
-	"n":          "int",
-	"bailout":    "real",
-	"trap":       "func",
-    },
-    "color": {
-	"inside":     "func",
-	"outside":    "func",
-    },
-    "orbit": {
-	"length":     "int",
-	"start":      "func",
-    },
-    "info": {
-	"info":       "text",
-    },
-};
-var ui_refresh = {
-    "view": refresh_func,
-    "func": refresh_func,
-    "iter": refresh_func,
-    "color": refresh_func,
-    "orbit": refresh_orbit,
-    "info": refresh_info,
-};
-var presets = {
-    "view": {
-	"320x480": {
-	    "width":  "320",
-	    "height": "480",
-	},
-	"360x640": {
-	    "width":  "360",
-	    "height": "480",
-	},
-	"500x500": {
-	    "width":  "500",
-	    "height": "500",
-	},
-	"1366x768": {
-	    "width":  "1366",
-	    "height": "768",
-	},
-	"1920x1080": {
-	    "width":  "1920",
-	    "height": "1080",
-	},
-	"default": {
-	    // view
-	    "center":  "0",
-	    "radius":  "1.2",
-	    "width":   "320",
-	    "height":  "320",
-	    // func
-	    "z0":      "p",
-	    "f(z)":    "add(mul(z,z),c)",
-	    "c":       "0",
-	    "data":    "",
-	    // iter
-	    "n":       "1",
-	    "bailout": "2",
-	    "trap":    "abs(z) > bailout",
-	    // color
-	    "inside":  "hsv(phase(z),1,1)",
-	    "outside": "hsv(0, 0, axes(z))",
-	    // orbit
-	    "length":  "20",
-	    "start":   "z0",
-
-	    // info
-	    "info":    [
-		"A portable phase portrait plotter for iterated complex functions.",
-		"    (c) 2017 by Refurio Anachro",
-		"",
-		"This file belongs to the public domain!",
-	    ].join("\n"),
-	},
-	"initial": {
-	}
-    },
-    "func": {
-	"Mandelbrot": {
-	    "f(z)":    "add(mul(z,z),p)",
-	},
-	"Julia": {
-	    "f(z)":    "add(mul(z,z),c)",
-	},
-	"Möbius function": {
-	    "f(z)": "div(add(mul(d(0),z),d(1)),add(mul(d(2),z),d(3)))",
-	    "data": "1 0\n1 1\n1 1\n0 1",
-	},
-	"Taylor expansion for exp(z)": {
-	    "f(z)": "add(z,q=div(mul(q,p),[k+1,0]))",
-	    "z0":   "q=[1,0]",
-	    "n":    "4",
-	},
-	"Lambert´s W": {
-	    "f(z)": "add(z,div((q=mul(q,p)), sub([1,0],q)))",
-	    "z0":   "q=p",
-	    "n":    "8",
-	},
-	"Puiseux series": {
-	    "f(z)": "add(z,mul(d(k),pow(p,[k/n, 0])))",
-	    "z0":   "p",
-	    "data": "1 0",
-	},
-    },
-    "iter": {
-	"identity (colorwheel)": {
-	    "z0":      "p",
-	    "n":       "0",
-	},
-	"function (simple)": {
-	    "n":       "1",
-	},
-	"escape time": {
-	    "n":       "8",
-	    "bailout": "2",
-	    "trap":    "abs(z) > bailout",
-	},
-    },
-    "orbit": {
-    },
-    "color": {
-	"phase portrait": {
-	    "inside":  "hsv(phase(z), 1, 1)",
-	},
-	"axes (b&w)": {
-	    "inside":  "hsv(0, 0, axes(z))",
-	},
-	"grid": {
-	    "inside":  "hsv(phase(z), 1, 1-annulus(0.5,0.75,grid(1,1,z)))",
-	},
-	"red/blue": {
-	    "inside":  "rgb((abs(z)<1) ? 0 : sharp(abs(inv(z))), 0, (abs(z)>1) ? 0 : sharp(abs(z)))",
-	},
-	"domain coloring": {
-	    "inside": "domain(0.1, 1, z)",
-	},
-    },
-};
-
-/* vector functions */
 function add(w, z) {
     var r = [];
     for(var i in w)
@@ -293,10 +139,11 @@ function smul(s, v) {
 	r[i] = s*v[i];
     return r;
 }
+</script>
 
-/* complex functions */
-var i = [0, 1];
-
+<h1>complex functions</h1>
+re(z) im(z) mul(w,z) div(w,z) inv(z) conj(z) neg(z) abs(z) arg(z) sqr(z) exp(z) ln(z) pow(z)
+<script type="text/javascript">
 function re(z) {
     return z[0];
 }
@@ -349,9 +196,6 @@ function arg(c) {
 function sqr(c) {
     return [ c[0]*c[0] - c[1]*c[1], 2*c[0]*c[1] ];
 }
-function id(z) {
-    return z;
-}
 function exp(z) {
     var e = Math.exp(z[0])
     return [ e*Math.cos(z[1]), e*Math.sin(z[1]) ];
@@ -362,7 +206,24 @@ function ln(z) {
 function pow(b, e) {
     return exp(mul(e,ln(b)))
 }
+</script>
 
+<h1>real functions</h1>
+<script type="text/javascript">
+function frac(x) {
+    return x - Math.floor(x);
+}
+function fac(i) {
+    var r = 1;
+    for(var j = 2; j <= i; ++j)
+	r *= j;
+    return r;
+}
+</script>
+
+<h1>interpolation functions</h1>
+phase(z), sharp(z)
+<script type="text/javascript">
 function phase(z) {
     return arg(z)/2/Math.PI;
 }
@@ -372,6 +233,11 @@ function sharp(t) {
     a = Math.asin(a)/Math.PI+0.5;
     return a;
 }
+</script>
+
+<h1>complex measure functions</h1>
+axes(z) grid(d1, d2, z) annulus(r1, r2, z)
+<script type="text/javascript">
 function axes(z) {
     return sharp(arg(z)/Math.PI);
 }
@@ -382,21 +248,11 @@ function annulus(r1, r2, z) {
     var r = abs(z);
     return  (r < r2 && r > r1) ? 1 : 0;
 }
+</script>
 
-/* real functions */
-function frac(x) {
-    return x - Math.floor(x);
-}
-function fac(i) {
-    var r = 1;
-    for(var j = 2; j <= i; ++j)
-	r *= j;
-    return r;
-}
-
-/* data functions */
-function nan_to_zero(t) {
-}
+<h1>data functions</h1>
+d(row,col)
+<script type="text/javascript">
 function d(i, j) {
     if(typeof i == "undefined")
 	i = k;
@@ -405,8 +261,11 @@ function d(i, j) {
     i = i % data.length;
     return [ Number(data[i][j*2]), Number(data[i][j*2+1]) ];
 }
+</script>
 
-/* color functions */
+<h1>color functions</h1>
+rgb(r,g,b) hsv(h,s,v) domain(r0, r1, z)
+<script type="text/javascript">
 function rgb(r, g, b) {
     return [ r, g, b ];
 }
@@ -441,6 +300,29 @@ function domain(r0, r1, z) {
 	a>r1 ? 1 : (frac(a/r0))
     );
 }
+</script>
+
+<script type="text/javascript">
+function complex_of_string(s) {
+    var m;
+    if(m = s.match(/^ *([0-9.Ee+-]+) *[+] *([0-9.Ee+-]+)i *$/))
+	return [ Number(m[1]), Number(m[2]) ];
+    if(m = s.match(/^ *([0-9.Ee+-]+) *[-] *([0-9.Ee+-]+)i *$/))
+	return [ Number(m[1]), -Number(m[2]) ];
+    if(m = s.match(/^ *([0-9.Ee+-]+)i *[+] *([0-9.Ee+-]+) *$/))
+	return [ Number(m[2]), Number(m[1]) ];
+    if(m = s.match(/^ *([0-9.Ee+-]+)i *[-] *([0-9.Ee+-]+) *$/))
+	return [ Number(m[2]), -Number(m[1]) ];
+    if(m = s.match(/^ *([0-9.Ee+-]+) *$/))
+	return [ Number(m[1]), 0 ];
+    if(m = s.match(/^ *([0-9.Ee+-]+)i *$/))
+	return [ 0, Number(m[1])];
+}
+function string_of_complex(value) {
+    var re = Number(value[0]).toPrecision(3);
+    var im = Number(value[1]).toPrecision(3);
+    return ""+ re +" + "+ im+"i";
+}
 
 /* dom functions */
 function get(n) {
@@ -463,19 +345,7 @@ function read_js(id) {
 }
 function read_complex(id) {
     var s = read(id);
-    var m;
-    if(m = s.match(/^ *([0-9.Ee+-]+) *[+] *([0-9.Ee+-]+)i *$/))
-	return [ Number(m[1]), Number(m[2]) ];
-    if(m = s.match(/^ *([0-9.Ee+-]+) *[-] *([0-9.Ee+-]+)i *$/))
-	return [ Number(m[1]), -Number(m[2]) ];
-    if(m = s.match(/^ *([0-9.Ee+-]+)i *[+] *([0-9.Ee+-]+) *$/))
-	return [ Number(m[2]), Number(m[1]) ];
-    if(m = s.match(/^ *([0-9.Ee+-]+)i *[-] *([0-9.Ee+-]+) *$/))
-	return [ Number(m[2]), -Number(m[1]) ];
-    if(m = s.match(/^ *([0-9.Ee+-]+) *$/))
-	return [ Number(m[1]), 0 ];
-    if(m = s.match(/^ *([0-9.Ee+-]+)i *$/))
-	return [ 0, Number(m[1])];
+    return complex_of_string(s);
 }
 function read_real(id) {
     return Number(read(id));
@@ -501,27 +371,28 @@ function write(id, value) {
 	console.error("write("+ id +"): undefined")
     node.value = value;
 }
-function complex_to_string(value) {
-    var re = Number(value[0]).toPrecision(3);
-    var im = Number(value[1]).toPrecision(3);
-    return ""+ re +" + "+ im+"i";
-}
 function write_complex(id, value) {
-    write(id, complex_to_string(value));
+    write(id, string_of_complex(value));
 }
 
-function render_textarea(name) {
-    return "<textarea id='"+ name +"'></textarea>\n";
+/* read arguments */
+function read_args() {
+    presets.view.initial = presets.view.default;
+    var r = window.location.hash.substr(1);
+    r = decodeURIComponent(r);
+    r = r.split("&");
+    for(i in r) {
+	var s = r[i].split("=");
+	var n = s.shift();
+	var v = s.join("=");
+	if(!n)
+	    continue;
+	if(v != presets.view.default[n])
+	    presets.view.initial[n] = v;
+    }
 }
-function render_input(name) {
-    return "<input id='"+ name +"'>\n";
-}
-function render_int(name) {
-    return "<input id='"+ name +"' type='number'>\n";
-}
-function render_checkbox(name) {
-    return "<checkbox id='"+ name +">\n";
-}
+
+/* widgets */
 var input_types = {
     func: {
 	widget: render_textarea,
@@ -561,12 +432,21 @@ function input(n) {
 	    }
     console.error("input("+ n +"): not found");
 }
-function help_link(id) {
-    return document.getElementsByName(id).length ? "<a href='#"+ id +"'>?</a>" : "";
+function render_textarea(name) {
+    return "<textarea id='"+ name +"'></textarea>\n";
+}
+function render_input(name) {
+    return "<input id='"+ name +"'>\n";
+}
+function render_int(name) {
+    return "<input id='"+ name +"' type='number'>\n";
+}
+function render_checkbox(name) {
+    return "<checkbox id='"+ name +">\n";
 }
 function render_widget(tab, name, decl) {
     var t = decl;
-    return input_types[t].widget(name, "") + help_link("param_"+ name) +"\n";
+    return input_types[t].widget(name, "") +"\n";
 }
 function render_box(b) {
     return "<div class='box'>\n"+ b +"</div>\n";
@@ -574,30 +454,17 @@ function render_box(b) {
 function render_tab(n, t) {
     return "<div class='tab' onchange='refresh(\""+ n +"\")'>\n"+ t +"</div>\n";
 }
-function close_tabs() {
-    var node = get("param");
-    for(var m = node.firstElementChild; m; m = m.nextElementSibling)
-	if(m.className == "tab open")
-	    m.className = "tab";
-}
-function pin(event) {
-    var n = event.target.parentNode;
-    var p = n.parentNode;
-    var t = n.className == "tab open";
-    close_tabs();
-    n.className = t ? "tab" : "tab open";
-}
 function render_presets(tab) {
-    var t = "<h2 onclick='pin(event)'>preset</h2>\n";
+    var t = "<h2 onclick='open_tab(event)'>preset</h2>\n";
     var r = "";
     for(var p in presets[tab])
-	r += "<button onclick='apply(\""+ tab +"\", \""+ p +"\")'>"+ p +"</button><br/>\n";
+	r += "<button onclick='apply_preset(\""+ tab +"\", \""+ p +"\")'>"+ p +"</button><br/>\n";
     return r;
 }
 function render_param() {
     var r = "";
     for(var tab in ui) {
-	var t = "<h2 onclick='pin(event)'>"+ tab +"</h2>\n";
+	var t = "<h2 onclick='open_tab(event)'>"+ tab +"</h2>\n";
 	var b = "";
 	for(var name in ui[tab]) {
 	    b += "<h3>"+ name +"</h3>\n";
@@ -612,15 +479,8 @@ function render_param() {
 function render() {
     get("param").outerHTML = render_param();
 }
-function apply(tab, p) {
-    console.log("apply("+ tab +","+ p +")");
-    for(var name in presets[tab][p]) {
-	console.log(""+ tab +"/"+ name +" = "+ presets[tab][p][name]);
-	write(name, presets[tab][p][name]);
-    }
-    refresh(tab);
-}
 
+/* graphics api */
 var canvas, ctx, row;
 var width, height;
 function clear(w, h) {
@@ -692,16 +552,24 @@ function draw_text(xy, text) {
 var screen = null;
 function draw_rulers() {
     draw_orbit();
-    var z = to_pixel(c), l = complex_to_string(c);
+    var z = to_pixel(c), l = string_of_complex(c);
     draw_coord(z);
     draw_text(z, l);
 }
+</script>
 
+<h1>the main loop</h1>
+var k // the number of iterations<br>
+var p // the current pixel coordinate<br>
+var z0 // the first input, usually p<br>
+var z // the current iteration point<br>
+function trap(z) // abort iteration when true, then use outside(z) color instead of inside(z) coloring<br>
+<script type="text/javascript">
 function compute_orbit() {
     var start = input("start");
-    var n = input("length");
+    n = input("length");
     p = c;
-    z = z0(c);
+    var z = start();
     orbit = [z];
     for(k = 0; k < n; ++k) {
 	z = f(z);
@@ -712,12 +580,9 @@ var k, p, y, z;
 var draw_timeout;
 function draw() {
     var row = [];
-    var t = false, u = y + 4;
-    if(u > n)
-	u = n;
     for(var x = 0; x < width; ++x) {
 	p = of_pixel([x, y]);
-	z = z0(p);
+	var z = z0();
 	for(k = 0; k < n && !(t = trap(z)); ++k)
 	    z = f(z);
 	row[x] = t ? outside(z) : inside(z);
@@ -737,10 +602,12 @@ function stop() {
     if(draw_timeout)
 	clearTimeout(draw_timeout);
 }
+</script>
 
+<script type="text/javascript">
 var n;
 var f, z0, inside, outside, trap;
-var c, d, bailout, of_pixel, to_pixel;
+var b, c, d, of_pixel, to_pixel;
 function refresh_func() {
     stop();
     var w = read("width");
@@ -768,7 +635,7 @@ function refresh_func() {
 
     data = read_data("data");
     n = input("n");
-    bailout = input("bailout");
+    b = input("b");
     f = input("f(z)");
     z0 = input("z0");
     c = input("c");
@@ -787,35 +654,6 @@ function refresh_orbit() {
     refresh_info();
 }
 function refresh_info() {
-    write_bookmark();
-}
-function refresh(tab) {
-    ui_refresh[tab]();
-}
-
-function canvas_onclick(event) {
-    stop();
-    c = of_pixel([ event.offsetX, event.offsetY ]);
-    write_complex("c", c);
-    refresh_orbit();
-}
-
-function read_args() {
-    presets.view.initial = presets.view.default;
-    var r = window.location.hash.substr(1);
-    r = decodeURIComponent(r);
-    r = r.split("&");
-    for(i in r) {
-	var s = r[i].split("=");
-	var n = s.shift();
-	var v = s.join("=");
-	if(!n)
-	    continue;
-	if(v != presets.view.default[n])
-	    presets.view.initial[n] = v;
-    }
-}
-function write_bookmark() {
     var r = [];
     for(var s in ui)
 	for(name in ui[s])
@@ -823,9 +661,199 @@ function write_bookmark() {
     r = encodeURIComponent(r.join("&"));
     get("bookmark").innerHTML = "<a href='#"+ r +"'>bookmark</a>";
 }
+function refresh(tab) {
+    ui_refresh[tab]();
+}
+
+/* event handlers */
+function open_tab(event) {
+    var n = event.target.parentNode;
+    var p = n.parentNode;
+    var t = n.className == "tab open";
+    close_tabs();
+    n.className = t ? "tab" : "tab open";
+}
+function close_tabs() {
+    var node = get("param");
+    for(var m = node.firstElementChild; m; m = m.nextElementSibling)
+	if(m.className == "tab open")
+	    m.className = "tab";
+}
+function canvas_onclick(event) {
+    stop();
+    c = of_pixel([ event.offsetX, event.offsetY ]);
+    write_complex("c", c);
+    refresh_orbit();
+}
+function apply_preset(tab, p) {
+    console.log("apply_preset("+ tab +","+ p +")");
+    for(var name in presets[tab][p]) {
+	console.log(""+ tab +"/"+ name +" = "+ presets[tab][p][name]);
+	write(name, presets[tab][p][name]);
+    }
+    refresh(tab);
+}
+
+var ui = {
+    "view": {
+	"center":     "complex",
+	"radius":     "func",
+	"width":      "int",
+	"height":     "int",
+    },
+    "func": {
+	"z0":         "func",
+	"f(z)":       "func",
+	"c":          "complex",
+	"data":       "data",
+    },
+    "iter": {
+	"n":          "int",
+	"b":          "real",
+	"trap":       "func",
+    },
+    "color": {
+	"inside":     "func",
+	"outside":    "func",
+    },
+    "orbit": {
+	"length":     "int",
+	"start":      "func",
+    },
+    "info": {
+	"info":       "text",
+    },
+};
+var ui_refresh = {
+    "view": refresh_func,
+    "func": refresh_func,
+    "iter": refresh_func,
+    "color": refresh_func,
+    "orbit": refresh_orbit,
+    "info": refresh_info,
+};
+var presets = {
+    "view": {
+	"320x480": {
+	    "width":  "320",
+	    "height": "480",
+	},
+	"360x640": {
+	    "width":  "360",
+	    "height": "480",
+	},
+	"500x500": {
+	    "width":  "500",
+	    "height": "500",
+	},
+	"1366x768": {
+	    "width":  "1366",
+	    "height": "768",
+	},
+	"1920x1080": {
+	    "width":  "1920",
+	    "height": "1080",
+	},
+	"default": {
+	    // view
+	    "center":  "0",
+	    "radius":  "1.2",
+	    "width":   "320",
+	    "height":  "320",
+	    // func
+	    "z0":      "p",
+	    "f(z)":    "add(mul(z,z),c)",
+	    "c":       "0",
+	    "data":    "",
+	    // iter
+	    "n":       "1",
+	    "b":       "2",
+	    "trap":    "abs(z) > b",
+	    // color
+	    "inside":  "hsv(phase(z),1,1)",
+	    "outside": "hsv(0, 0, axes(z))",
+	    // orbit
+	    "length":  "20",
+	    "start":   "z0",
+
+	    // info
+	    "info":    [
+		"A portable phase portrait plotter for iterated complex functions.",
+		"    (c) 2017 by Refurio Anachro",
+		"",
+		"This file belongs to the public domain!",
+	    ].join("\n"),
+
+	    "width":   "32",
+	    "height":  "32",
+	},
+	"initial": {
+	}
+    },
+    "func": {
+	"Mandelbrot": {
+	    "f(z)":    "add(mul(z,z),p)",
+	},
+	"Julia": {
+	    "f(z)":    "add(mul(z,z),c)",
+	},
+	"Möbius function": {
+	    "f(z)": "div(add(mul(d(0),z),d(1)),add(mul(d(2),z),d(3)))",
+	    "data": "1 0\n1 1\n1 1\n0 1",
+	},
+	"Taylor expansion for exp(z)": {
+	    "f(z)": "add(z,q=div(mul(q,p),[k+1,0]))",
+	    "z0":   "q=[1,0]",
+	    "n":    "4",
+	},
+	"Lambert´s W": {
+	    "f(z)": "add(z,div((q=mul(q,p)), sub([1,0],q)))",
+	    "z0":   "q=p",
+	    "n":    "8",
+	},
+	"Puiseux series": {
+	    "f(z)": "add(z,mul(d(k),pow(p,[k/n, 0])))",
+	    "z0":   "p",
+	    "data": "1 0",
+	},
+    },
+    "iter": {
+	"identity (colorwheel)": {
+	    "z0":      "p",
+	    "n":       "0",
+	},
+	"function (simple)": {
+	    "n":       "1",
+	},
+	"escape time": {
+	    "n":       "8",
+	    "b":       "2",
+	    "trap":    "abs(z) > b",
+	},
+    },
+    "orbit": {
+    },
+    "color": {
+	"phase portrait": {
+	    "inside":  "hsv(phase(z), 1, 1)",
+	},
+	"axes (b&w)": {
+	    "inside":  "hsv(0, 0, axes(z))",
+	},
+	"grid": {
+	    "inside":  "hsv(phase(z), 1, 1-annulus(0.5,0.75,grid(1,1,z)))",
+	},
+	"red/blue": {
+	    "inside":  "rgb((abs(z)<1) ? 0 : sharp(abs(inv(z))), 0, (abs(z)>1) ? 0 : sharp(abs(z)))",
+	},
+	"domain coloring": {
+	    "inside": "domain(0.1, 1, z)",
+	},
+    },
+};
 
 render();
-apply("view", "default");
+apply_preset("view", "default");
 read_args();
 refresh("view");
 
