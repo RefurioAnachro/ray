@@ -219,7 +219,7 @@ function fac(i) {
     var r = 1;
     for(var j = 2; j <= i; ++j)
 	r *= j;
-    return r;
+    return [r, 0];
 }
 ////////////////////////////////////////////////////////////////
 </script>
@@ -246,15 +246,11 @@ function axes(z) {
     return sharp([arg(z)[0]/Math.PI,0]);
 }
 function grid(d1, d2, z) {
-    d1 = d1[0];
-    d2 = d2[0];
-    return smul(2, [ frac(z[0]/d1+0.5)-0.5, frac(z[1]/d2+0.5)-0.5 ]);
+    return [ z[0]/d1[0]*2%2/2, z[1]/d2[0]*2%2/2 ];
 }
 function annulus(r1, r2, z) {
-    r1 = r1[0];
-    r2 = r2[0];
-    var r = abs(z);
-    return  (r < r2 && r > r1) ? 1 : 0;
+    var r = abs(z)[0];
+    return  (r < r2[0] && r > r1[0]) ? [1,0] : [0,0];
 }
 ////////////////////////////////////////////////////////////////
 </script>
@@ -708,7 +704,7 @@ function draw() {
     for(var x = 0; x < width; ++x) {
 	p = of_pixel([x, y]);
 	var z = z0();
-	for(var j = 0; j < maxiter && !(t = trap(z)); ++j) {
+	for(var j = 0; j < n[0] && !(t = trap(z)); ++j) {
 	    k = [j, 0];
 	    z = f(z);
 	}
@@ -762,9 +758,9 @@ function refresh_func() {
     };
 
     data = read_data("data");
-    maxiter = input("n");
+    n = [input("n"), 0];
     k = [0,0];
-    b = input("b");
+    b = [input("b"), 0];
     f = input("f(z)");
     z0 = input("z0");
     c = input("c");
@@ -838,7 +834,7 @@ var ui = {
     },
     "iter": {
 	"n":          "int",
-	"b":          "real",
+	"b":          "int",
 	"trap":       "func",
     },
     "color": {
