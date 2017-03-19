@@ -16,52 +16,6 @@
   <button onclick="refresh('view')">refresh</button> right click: <span id="bookmark"></span> <span id="save">save</span>
 </div>
 
-<div id="help">
-  <h1>Introduction</h1>
-  <div class="intro">
-    <p><i>portable phase portrait plotter</i></p>
-  </div>
-  <h1>Presets</h1>
-  <div class="preset"><a name="preset_mandelbrot"></a>
-    <h2>Mandelbrot set</h2>
-    The famous set by Benoit B. Mandelbrot. f(z) = z²+c
-  </div>
-  <div class="preset"><a name="preset_julia"></a>
-    <h2>Julia set</h2>
-    <p>Julia set for Mandelbrot´s formula.</p>
-
-    <p>f(z) = z²+p, z0 = c</p>
-  </div>
-  <div class="preset"><a name="preset_grid"></a>
-    <h2>grid coloring</h2>
-    <p>By default, the black rings are centered around every complex number whose coordinates are integers. Conformal mappings map circles to circles everywhere except at a finite set of points. Those are usually zeros, poles, and the zeros and poles of the derivative of f(z). At these points circles may not get get mapped to circles. Putting a circle around zero is pobably asking for that kind of trouble. So it may be a good idea to shift the grid a little.</p>
-  </div>
-
-  <div class="preset"><a name="preset_lambert"></a>
-    <h2>expansion of Lambert`s W function</h2>
-    <p>A simple simple example for a generalization of power series to include fractions. Lambert`s W consists of summands of the form z^n/(1+z^n). Taken as a Schema for constructing infinite series we may generalize this slightly and multiply each element by a number.</p>
-
-  <h1>Parameters</h1>
-  <div class="param"><a name="param_center"></a>
-    <h2>center</h2>
-    <p>Complex coordinate for the center of the view.</p>
-  </div>
-  <div class="param"><a name="param_radius"></a>
-    <h2>radius</h2>
-    <p>Make the view large enough that a circle of this radius fits snugly inside.</p>
-  </div>
-
-  <h1>Function library</h1>
-  <div class="lib"><a name="lib_add"></a>
-    <h2>add(a,b)</h2>
-    <p>Complex addition.</p>
-  </div>
-</div>
-
-<div id="copy">
-  (c) 2017 by Refurio Anachro, this html file belongs to the public domain!
-</div>
-
 <style>
   * {
     font-size: 12pt;
@@ -153,18 +107,6 @@
     font-size: 10pt;
     width: 40ex;
     height: 25em;
-  }
-
-  #copy {
-    padding-left: 1ex;
-    background: white;
-    position: fixed;
-    padding-top: 0.5ex;
-    left: 0px;
-    bottom: 0px;
-    width: 100%;
-    border-top: 1px solid black;
-    font-size: 8pt;
   }
 
 @media (max-width: 320px) {
