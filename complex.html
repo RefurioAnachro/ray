@@ -137,16 +137,17 @@ function smul(s, v) {
 	r[i] = s*v[i];
     return r;
 }
+////////////////////////////////////////////////////////////////
 </script>
 
 <h1>complex functions</h1>
 re(z) im(z) mul(w,z) div(w,z) inv(z) conj(z) neg(z) abs(z) arg(z) sqr(z) exp(z) ln(z) pow(z)
 <script type="text/javascript">
 function re(z) {
-    return z[0];
+    return [z[0], 0];
 }
 function im(z) {
-    return z[1];
+    return [z[1], 0];
 }
 
 // can use vector add() and sub()
@@ -183,13 +184,13 @@ function neg(z) {
     ];
 }
 function absq(z) {
-    return z[0]*z[0] + z[1]*z[1];
+    return [z[0]*z[0] + z[1]*z[1], 0];
 }
 function abs(z) {
-    return Math.sqrt(z[0]*z[0] + z[1]*z[1]);
+    return [Math.sqrt(z[0]*z[0] + z[1]*z[1]), 0];
 }
 function arg(c) {
-    return Math.atan2(c[1], c[0]);
+    return [Math.atan2(c[1], c[0]), 0];
 }
 function sqr(c) {
     return [ c[0]*c[0] - c[1]*c[1], 2*c[0]*c[1] ];
@@ -199,53 +200,63 @@ function exp(z) {
     return [ e*Math.cos(z[1]), e*Math.sin(z[1]) ];
 }
 function ln(z) {
-    return [ Math.log(abs(z)), arg(z) ];
+    return [ Math.log(abs(z)[0]), arg(z)[0] ];
 }
 function pow(b, e) {
     return exp(mul(e,ln(b)))
 }
+////////////////////////////////////////////////////////////////
 </script>
 
 <h1>real functions</h1>
+fac(n)
 <script type="text/javascript">
-function frac(x) {
+function frac(x) { // undocumented, does not understand complex argument!
     return x - Math.floor(x);
 }
 function fac(i) {
+    i = i[0];
     var r = 1;
     for(var j = 2; j <= i; ++j)
 	r *= j;
     return r;
 }
+////////////////////////////////////////////////////////////////
 </script>
 
 <h1>interpolation functions</h1>
 phase(z), sharp(z)
 <script type="text/javascript">
 function phase(z) {
-    return arg(z)/2/Math.PI;
+    return [arg(z)[0]/2/Math.PI, 0];
 }
 function sharp(t) {
-    var a = (2*t+2) % 2 - 1;
+    var a = (2*t[0]+2) % 2 - 1;
     a = Math.abs(2*a)-1;
     a = Math.asin(a)/Math.PI+0.5;
-    return a;
+    return [a, 0];
 }
+////////////////////////////////////////////////////////////////
 </script>
 
 <h1>complex measure functions</h1>
 axes(z) grid(d1, d2, z) annulus(r1, r2, z)
 <script type="text/javascript">
 function axes(z) {
-    return sharp(arg(z)/Math.PI);
+    return sharp([arg(z)[0]/Math.PI,0]);
 }
 function grid(d1, d2, z) {
+    d1 = d1[0];
+    d2 = d2[0];
     return smul(2, [ frac(z[0]/d1+0.5)-0.5, frac(z[1]/d2+0.5)-0.5 ]);
 }
 function annulus(r1, r2, z) {
+    r1 = r1[0];
+    r2 = r2[0];
     var r = abs(z);
     return  (r < r2 && r > r1) ? 1 : 0;
 }
+////////////////////////////////////////////////////////////////
 </script>
 
 <h1>data functions</h1>
@@ -255,19 +266,25 @@ function d(i, j) {
     if(typeof i == "undefined")
 	i = k;
     if(typeof j == "undefined")
-	j = 0;
+	j = [0,0];
+    i = i[0];
+    j = j[0];
     i = i % data.length;
     return [ Number(data[i][j*2]), Number(data[i][j*2+1]) ];
 }
+////////////////////////////////////////////////////////////////
 </script>
 
 <h1>color functions</h1>
 rgb(r,g,b) hsv(h,s,v) domain(r0, r1, z)
 <script type="text/javascript">
 function rgb(r, g, b) {
-    return [ r, g, b ];
+    return [ r[0], g[0], b[0] ];
 }
 function hsv(h, s, v) {
+    h = h[0];
+    s = s[0];
+    v = v[0];
     var r, g, b, i, f, p, q, t;
     s = s > 1 ? 1 : s < 0 ? 0 : s;
     v = v > 1 ? 1 : v < 0 ? 0 : v;
@@ -291,6 +308,8 @@ function hsv(h, s, v) {
     }
 }
 function domain(r0, r1, z) {
+    r0 = r0[0];
+    r1 = r1[0];
     var a = abs(z);
     return hsv(
 	phase(z),
@@ -298,24 +317,129 @@ function domain(r0, r1, z) {
 	a>r1 ? 1 : (frac(a/r0))
     );
 }
+////////////////////////////////////////////////////////////////
+</script>
+
+<h1>complex expression parser</h1>
+7 -7i 1.2e3 -3.2e-1 f(x) c<br>
+a+b a-b a*b a/b a^b a² a³
+<script type="text/javascript">
+function make_pstate(s) {
+    return {
+	s: s,
+	o: 0,
+    };
+};
+function with_v(s, v) {
+    if(!s)
+	return null;
+    return {
+	s: s.s,
+	o: s.o,
+	v: v,
+    };
+}
+function match(r, s, i) {
+    if(typeof i == "undefined")
+	i = 0;
+    if(!s)
+	return null;
+    var m = s.s.substr(s.o).match(r);
+    if(!m)
+	return null;
+    return {
+	s: s.s,
+	o: s.o + m[0].length,
+	v: m[i],
+    };
+}
+function match_float(s) {
+    var m = match(/^[+-]?[0-9]*\.?[0-9]*(e[+-][0-9]*)?/, s);
+    if(m.v)
+	return m;
+}
+function match_complex(s) {
+    var m, n;
+    if((m = match(/^i/, s)) && (match(/^[^a-zA-Z0-9_]|$/,m)))
+	return with_v(m, "[0,1]");
+    if((n = match_float(s)) && (m = match(/^i/, n)))
+	return with_v(m, "[0,"+ n.v +"]");
+    if((n = match_float(s)))
+	return with_v(n, "["+ n.v +",0]");
+}
+function match_list(s) {
+    var e, m, v;
+    if((e = match_expr(s)) && (m = match(/^,/,e)) && (v = match_list(m)))
+	return with_v(v, e.v +","+ v.v);
+    return match_expr(s);
+}
+function match_vect(s) {
+    var m, l;
+    if((m = match(/^\[/, s)) && (l = match_list(m)) && (m = match(/^\]/, s)))
+	return with_v(m, "["+ l.v +"]");
+    return match(/^\[\]/, s);
+}
+function match_id(s) {
+    return match(/^[a-zA-Z_][a-zA-Z_0-9]*/, s);
+}
+function match_call(s) {
+    var f, m, v;
+     if((f = match_id(s)) && (m = match(/^\(/, f)) && (v = match_list(m)) && (m = match(/^\)/, v)))
+	return with_v(m, f.v +"("+ v.v +")");
+     if((f = match_id(s)) && (m = match(/^\(\)/, f)))
+	return with_v(m, f.v +"()");
+}
+function match_opnd(s) {
+    var m, s1;
+    if((m = match(/^[(]/, s)) && (s1 = match_expr(m)) && (m = match(/^[)]/, s1)))
+	return with_v(m, s1.v);
+    if(m = match_complex(s))
+	return m;
+    if(s1 = match_call(s))
+	return s1;
+    return match_id(s);
+}
+function match_pow(s) {
+    var s1, op, s2;
+    if((s1 = match_opnd(s)) && (op = match(/^\^/, s1)) && (s2 = match_pow(op)))
+	return with_v(s2, "pow("+ s1.v +", "+ s2.v +")");
+    if((s1 = match_opnd(s)) && (op = match(/^[²³]/, s1)))
+	return with_v(op, "pow("+ s1.v +",["+ (op == "³" ? "3" : "2") +",0])");
+    return match_opnd(s);
+}
+function match_prod(s) {
+    var s1, op, s2;
+    if((s1 = match_pow(s)) && (op = match(/^[*\/]/, s1)) && (s2 = match_prod(op)))
+	return with_v(s2, (op.v == "/" ? "div" : "mul") +"("+ s1.v +", "+ s2.v +")");
+    return match_pow(s);
+}
+function match_sum(s) {
+    var s1, op, s2;
+    if((s1 = match_prod(s)) && (op = match(/^[+-]/, s1)) && (s2 = match_sum(op)))
+	return with_v(s2, (op.v == "-" ? "sub" : "add") +"("+ s1.v +", "+ s2.v +")");
+    return match_prod(s);
+}
+function match_other(s) {
+    var s1, op, s2;
+    if((s1 = match_sum(s)) && (op = match(/^(<|>|==|<=|>=|!=|=|\?|:)/, s1)) && (s2 = match_sum(op)))
+	return with_v(s2, ""+ s1.v + op.v + s2.v);
+    return match_sum(s);
+}
+function match_expr(s) {
+    return match_other(s);
+}
+function compile(name, args, s) {
+    var s = s.replace(/[ \t\n]/g, "");
+    var e = match_expr(make_pstate(s));
+    if(!e)
+	return console.error("syntax error!");
+    e = "// "+ name +"\n_ = function("+ args.join(",") +") {\n  return "+ e.v +";\n}\n";
+    return eval(e);
+}
+////////////////////////////////////////////////////////////////
 </script>
 
 <script type="text/javascript">
-function complex_of_string(s) {
-    var m;
-    if(m = s.match(/^ *([0-9.Ee+-]+) *[+] *([0-9.Ee+-]+)i *$/))
-	return [ Number(m[1]), Number(m[2]) ];
-    if(m = s.match(/^ *([0-9.Ee+-]+) *[-] *([0-9.Ee+-]+)i *$/))
-	return [ Number(m[1]), -Number(m[2]) ];
-    if(m = s.match(/^ *([0-9.Ee+-]+)i *[+] *([0-9.Ee+-]+) *$/))
-	return [ Number(m[2]), Number(m[1]) ];
-    if(m = s.match(/^ *([0-9.Ee+-]+)i *[-] *([0-9.Ee+-]+) *$/))
-	return [ Number(m[2]), -Number(m[1]) ];
-    if(m = s.match(/^ *([0-9.Ee+-]+) *$/))
-	return [ Number(m[1]), 0 ];
-    if(m = s.match(/^ *([0-9.Ee+-]+)i *$/))
-	return [ 0, Number(m[1])];
-}
 function string_of_complex(value) {
     var re = Number(value[0]).toPrecision(3);
     var im = Number(value[1]).toPrecision(3);
@@ -337,13 +461,11 @@ function read(id) {
     return null;
 }
 function read_js(id) {
-    var expr = read(id);
-    expr = "_ = function(z) { return "+ expr +"; }";
-    return eval(expr);
+    return compile(id, ["z"], read(id));
 }
 function read_complex(id) {
-    var s = read(id);
-    return complex_of_string(s);
+    var f = compile(id, [], read(id));
+    return f();
 }
 function read_real(id) {
     return Number(read(id));
@@ -554,14 +676,16 @@ function draw_rulers() {
     draw_coord(z);
     draw_text(z, l);
 }
+////////////////////////////////////////////////////////////////
 </script>
 
 <h1>the main loop</h1>
-var k // the number of iterations<br>
-var p // the current pixel coordinate<br>
-var z0 // the first input, usually p<br>
-var z // the current iteration point<br>
-function trap(z) // abort iteration when true, then use outside(z) color instead of inside(z) coloring<br>
+n: integer // maximum number of iterations<br>
+k: integer // current number of iterations<br>
+p: complex // current pixel`s coordinate<br>
+z0: complex // first input to f(z), usually p<br>
+z: complex // the current iteration point<br>
+trap: complex -> boolean // abort iteration when true, then use outside(z) color instead of inside(z) coloring<br>
 <script type="text/javascript">
 function compute_orbit() {
     var start = input("start");
@@ -569,7 +693,8 @@ function compute_orbit() {
     p = c;
     var z = start();
     orbit = [z];
-    for(k = 0; k < n; ++k) {
+    for(var j = 0; j < n; ++j) {
+	k = [j, 0];
 	z = f(z);
 	orbit[k+1] = z;
     }
@@ -581,8 +706,10 @@ function draw() {
     for(var x = 0; x < width; ++x) {
 	p = of_pixel([x, y]);
 	var z = z0();
-	for(k = 0; k < n && !(t = trap(z)); ++k)
+	for(var j = 0; j < maxiter && !(t = trap(z)); ++j) {
+	    k = [j, 0];
 	    z = f(z);
+	}
 	row[x] = t ? outside(z) : inside(z);
 	if(typeof row[x] == "undefined")
 	    row[x] = [0, 0, 0];
@@ -600,6 +727,7 @@ function stop() {
     if(draw_timeout)
 	clearTimeout(draw_timeout);
 }
+////////////////////////////////////////////////////////////////
 </script>
 
 <script type="text/javascript">
@@ -632,7 +760,8 @@ function refresh_func() {
     };
 
     data = read_data("data");
-    n = input("n");
+    maxiter = input("n");
+    k = [0,0];
     b = input("b");
     f = input("f(z)");
     z0 = input("z0");
@@ -772,7 +901,7 @@ var presets = {
 	    "outside": "hsv(0, 0, axes(z))",
 	    // orbit
 	    "length":  "20",
-	    "start":   "z0",
+	    "start":   "z0()",
 
 	    // info
 	    "info":    [
@@ -781,36 +910,34 @@ var presets = {
 		"",
 		"This file belongs to the public domain!",
 	    ].join("\n"),
-
-	    "width":   "32",
-	    "height":  "32",
 	},
 	"initial": {
 	}
     },
     "func": {
 	"Mandelbrot": {
-	    "f(z)":    "add(mul(z,z),p)",
+	    "f(z)":    "z²+p",
 	},
 	"Julia": {
-	    "f(z)":    "add(mul(z,z),c)",
+	    "f(z)":    "z²+c",
 	},
 	"Möbius function": {
 	    "f(z)": "div(add(mul(d(0),z),d(1)),add(mul(d(2),z),d(3)))",
+	    "f(z)": "(d(0)*z + d(1)) / (d(2)*z + d(3))",
 	    "data": "1 0\n1 1\n1 1\n0 1",
 	},
 	"Taylor expansion for exp(z)": {
-	    "f(z)": "add(z,q=div(mul(q,p),[k+1,0]))",
-	    "z0":   "q=[1,0]",
+	    "f(z)": "z + (q = q*p / (k+1))",
+	    "z0":   "q = 1",
 	    "n":    "4",
 	},
 	"Lambert´s W": {
-	    "f(z)": "add(z,div((q=mul(q,p)), sub([1,0],q)))",
+	    "f(z)": "z + (q = q*p) / (1-q)",
 	    "z0":   "q=p",
 	    "n":    "8",
 	},
 	"Puiseux series": {
-	    "f(z)": "add(z,mul(d(k),pow(p,[k/n, 0])))",
+	    "f(z)": "z + d(k) * p^(k/n)",
 	    "z0":   "p",
 	    "data": "1 0",
 	},
