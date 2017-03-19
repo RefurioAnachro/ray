@@ -829,8 +829,8 @@ var ui = {
 	"height":     "int",
     },
     "func": {
-	"z0":         "func",
 	"f(z)":       "func",
+	"z0":         "func",
 	"c":          "complex",
 	"data":       "data",
     },
@@ -922,8 +922,7 @@ var presets = {
 	    "f(z)":    "z²+c",
 	},
 	"Möbius function": {
-	    "f(z)": "div(add(mul(d(0),z),d(1)),add(mul(d(2),z),d(3)))",
-	    "f(z)": "(d(0)*z + d(1)) / (d(2)*z + d(3))",
+	    "f(z)": "(d(0)*z + d(1))\n / \n(d(2)*z + d(3))",
 	    "data": "1 0\n1 1\n1 1\n0 1",
 	},
 	"Taylor expansion for exp(z)": {
@@ -932,8 +931,8 @@ var presets = {
 	    "n":    "4",
 	},
 	"Lambert´s W": {
-	    "f(z)": "z + (q = q*p) / (1-q)",
-	    "z0":   "q=p",
+	    "f(z)": "z + (q = q*p)\n / \n(1-q)",
+	    "z0":   "q = p",
 	    "n":    "8",
 	},
 	"Puiseux series": {
