@@ -759,6 +759,7 @@ function refresh_func() {
 	];
     };
 
+    var t0 = Date.now();
     data = read_data("data");
     n = [input("n"), 0];
     k = [0,0];
@@ -769,6 +770,7 @@ function refresh_func() {
     inside = input("inside");
     outside = input("outside");
     trap = input("trap");
+    console.log((Date.now() - t0) / 1000);
 
     y = 0;
     draw();
@@ -889,11 +891,11 @@ var presets = {
 	    "height":  "320",
 	    // func
 	    "z0":      "p",
-	    "f(z)":    "z²+c",
+	    "f(z)":    "z²+p",
 	    "c":       "0",
 	    "data":    "",
 	    // iter
-	    "n":       "1",
+	    "n":       "8",
 	    "b":       "2",
 	    "trap":    "abs(z) > b",
 	    // color
@@ -954,6 +956,9 @@ var presets = {
 	    "b":       "2",
 	    "trap":    "abs(z) > b",
 	},
+	"no trap": {
+	    "trap":    "false",
+	}
     },
     "orbit": {
     },
