@@ -240,7 +240,7 @@ function sharp(t) {
 </script>
 
 <h1>complex measure functions</h1>
-axes(z) grid(d1, d2, z) annulus(r1, r2, z)
+axes(z)
 <script type="text/javascript">
 function axes(z) {
     return sharp([arg(z)[0]/Math.PI,0]);
@@ -969,9 +969,9 @@ var presets = {
 	"axes (b&w)": {
 	    "inside":  "hsv(0, 0, axes(z))",
 	},
-	"grid": {
-	    "inside":  "hsv(phase(z), 1, 1-annulus(0.5,0.75,grid(1,1,z)))",
-	},
+//	"grid": {
+//	    "inside":  "hsv(phase(z), 1, 1-annulus(0.5,0.75,grid(1,1,z)))",
+//	},
 	"red/blue": {
 	    "inside":  "rgb((abs(z)<1) ? 0 : sharp(abs(inv(z))), 0, (abs(z)>1) ? 0 : sharp(abs(z)))",
 	},
