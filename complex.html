@@ -352,9 +352,7 @@ function with_v(s, v) {
 	v: v,
     };
 }
-function match(r, s, i) {
-    if(typeof i == "undefined")
-	i = 0;
+function match(r, s) {
     if(!s)
 	return null;
     var m = s.s.substr(s.o).match(r);
@@ -363,7 +361,7 @@ function match(r, s, i) {
     return {
 	s: s.s,
 	o: s.o + m[0].length,
-	v: m[i],
+	v: m[0],
     };
 }
 function match_float(s) {
