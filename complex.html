@@ -11,7 +11,7 @@
   <div id="param"></div>
   <canvas id="main" width="320" height="320" onclick="canvas_onclick(event)" onmousedown="window.onmousemove=canvas_onclick" onmouseup="window.onmousemove=null" ontouchmove="canvas_onclick(event)"></canvas>
   <br>
-  <button onclick="refresh('view')">refresh</button> right click: <span id="bookmark"></span> <span id="save">save</span>
+  <button id="refresh" onclick="refresh('view')">refresh</button><button id="stop" onclick="stop()">stop</button> right click: <span id="bookmark"></span> <span id="save">save</span>
 </div>
 
 <style>
@@ -105,6 +105,23 @@
     font-size: 10pt;
     width: 40ex;
     height: 25em;
+  }
+
+  textarea#f\(z\) {
+      visibility: visible;
+  }
+
+  .computing {
+    background-color: #ffbebe;
+  }
+  .computing #refresh {
+    display: none;
+  }
+  #stop {
+    display: none;
+  }
+  .computing #stop {
+    display: inline-block;
   }
 
 @media (max-width: 320px) {
@@ -454,9 +471,6 @@ function string_of_complex(value) {
 function get(n) {
     return document.getElementById(n);
 }
-function set_class(n, c) {
-    get(n).setAttribute("class", c);
-}
 function read(id) {
     var r = get(id);
     if(typeof r != "undefined" && r != null)
@@ -760,6 +774,7 @@ var f, z0, z0_func, inside, outside, trap;
 var b, c, d, of_pixel, to_pixel;
 function refresh_func() {
     stop();
+    get("portrait").className = "computing";
     var w = read("width");
     var h = read("height");
     if(width != w || height != h)
@@ -801,6 +816,7 @@ function refresh_func() {
 //    refresh_orbit();
 }
 function refresh_orbit() {
+    get("portrait").className = "computing";
     compute_orbit();
     restore(screen);
     draw_rulers();
@@ -813,6 +829,7 @@ function refresh_info() {
 	    r.push(""+ name +"="+ get(name).value);
     r = encodeURIComponent(r.join("&"));
     get("bookmark").innerHTML = "<a href='#"+ r +"'>bookmark</a>";
+    get("portrait").className = "done";
 }
 function refresh(tab) {
     ui_refresh[tab]();
