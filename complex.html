@@ -789,10 +789,10 @@ function compute_orbit() {
 	z = start();
 	orbit = [z];
 	for(var j = 0; j < n; ++j) {
-	    if(isNaN(z[0]+z[1]))
-		break;
 	    k = [j, 0];
 	    z = f(z);
+	    if(isNaN(z[0]+z[1]))
+		break;
 	    orbit[j+1] = z;
 	}
     }
