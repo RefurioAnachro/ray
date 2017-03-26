@@ -937,6 +937,12 @@ var presets = {
 	    "z0":   "q = p",
 	    "n":    "8",
 	},
+	"Laurent series": {
+	    "f(z)": "z\n + d(k)*(p-c)^(k+1)\n + d(k,1)*(p-c)^(-1-k)",
+	    "z0":   "0",
+	    "n":    "4",
+	    "data": "1 0 1 0",
+	},
 	"Puiseux series": {
 	    "f(z)": "z + d(k) * p^(k/n)",
 	    "z0":   "p",
@@ -977,6 +983,11 @@ var presets = {
 	},
 	"domain coloring": {
 	    "inside": "domain(0.1, 1, z)",
+	},
+	"Dirichlet series / Zeta": {
+	    "f(z)": "z + d(k) / (k+1)^p",
+	    "z0":   "0",
+	    "data": "1 0",
 	},
     },
 };
