@@ -264,8 +264,8 @@ axes(z)
 function axes(z) {
     return sharp([arg(z)[0]/Math.PI,0]);
 }
-function grid(d1, d2, z) {
-    return [ z[0]/d1[0]*2%2/2, z[1]/d2[0]*2%2/2 ];
+function grid(z) {
+    return [ frac(z[0]), frac(z[1]) ];
 }
 function annulus(r1, r2, z) {
     var r = abs(z)[0];
@@ -1010,25 +1010,25 @@ var presets = {
 	"Julia": {
 	    "f(z)":    "z²+c",
 	},
-	"Möbius function": {
-	    "f(z)": "(d(0)*z + d(1))\n / \n(d(2)*z + d(3))",
-	    "data": "1 0\n1 1\n1 1\n0 1",
-	},
 	"Taylor expansion for exp(z)": {
 	    "f(z)": "z + (q = q*p / (k+1))",
 	    "z0":   "q = 1",
 	    "n":    "4",
 	},
-	"Lambert´s W": {
-	    "f(z)": "z + (q = q*p)\n / \n(1-q)",
-	    "z0":   "q = p",
-	    "n":    "8",
+	"Möbius transformation": {
+	    "f(z)": "(d(0)*z + d(1))\n / \n(d(2)*z + d(3))",
+	    "data": "1 0\n1 1\n1 1\n0 1",
 	},
 	"Laurent series": {
 	    "f(z)": "z\n + d(k)*(p-c)^(k+1)\n + d(k,1)*(p-c)^(-1-k)",
 	    "z0":   "0",
 	    "n":    "4",
 	    "data": "1 0 1 0",
+	},
+	"Lambert´s W": {
+	    "f(z)": "z + (q = q*p)\n / \n(1-q)",
+	    "z0":   "q = p",
+	    "n":    "8",
 	},
 	"Puiseux series": {
 	    "f(z)": "z + d(k) * p^(k/n)",
@@ -1048,15 +1048,13 @@ var presets = {
 	},
 	"function (simple)": {
 	    "n":       "1",
+	    "trap":    "false",
 	},
 	"escape time": {
 	    "n":       "8",
 	    "b":       "2",
 	    "trap":    "abs(z) > b",
 	},
-	"no trap": {
-	    "trap":    "false",
-	}
     },
     "orbit": {
     },
