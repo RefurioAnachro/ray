@@ -436,8 +436,8 @@ function match_other(s) {
     var s1, op, s2;
     if((s1 = match_sum(s)) && (op = match(/^(<|>|==|<=|>=|!=)/, s1)) && (s2 = match_sum(op)))
 	return with_v(s2, s1.v +"[0]"+ op.v + s2.v +"[0]");
-    if((s1 = match_sum(s)) && (op = match(/^(=)/, s1)) && (s2 = match_sum(op)))
-	return with_v(s2, ""+ s1.v + op.v + s2.v);
+    if((s1 = match_sum(s)) && (op = match(/^(=|\|\||&&)/, s1)) && (s2 = match_sum(op)))
+	return with_v(s2, "(("+ s1.v +")"+ op.v +"("+ s2.v +"))");
     return match_sum(s);
 }
 function match_expr(s) {
