@@ -714,10 +714,37 @@ z0: complex // first input to f(z), usually p<br>
 z: complex // the current iteration point<br>
 trap: complex -> boolean // abort iteration when true, then use outside(z) color instead of inside(z) coloring<br>
 <script type="text/javascript">
+var w, h;
+var center, radius;
+var f, z0_func, c, data;
+var n, b, trap;
+var inside, outside;
+var start, length;
+function read_form() {
+    w = read("width");
+    h = read("height");
+    center = input("center");
+    radius = Number(read("radius"));
+
+    f = input("f(z)");
+    z0_func = input("z0");
+    c = input("c");
+    data = read_data("data");
+
+    n = [input("n"), 0];
+    b = [input("b"), 0];
+    trap = input("trap");
+
+    inside = input("inside");
+    outside = input("outside");
+
+    start = input("start");
+    length = input("length");
+}
+
 function compute_orbit() {
     try {
-	var start = input("start");
-	n = input("length");
+	n = length;
 	p = c;
 	z0 = z0_func();
 	z = start();
@@ -783,12 +810,8 @@ var b, c, d, of_pixel, to_pixel;
 function refresh_func() {
     stop();
     get("portrait").className = "computing";
-    var w = read("width");
-    var h = read("height");
     clear(w, h);
 
-    var center = input("center");
-    var radius = Number(read("radius"));
     var m = height < width ? height : width;
     var a00 =  2*radius/m, a01 = + center[0] - radius*width/m;
     var a10 = -2*radius/m, a11 = + center[1] + radius*height/m;
@@ -805,39 +828,31 @@ function refresh_func() {
 	];
     };
 
-    var t0 = Date.now();
-    data = read_data("data");
-    n = [input("n"), 0];
     k = [0,0];
-    b = [input("b"), 0];
-    f = input("f(z)");
-    z0_func = input("z0");
-    c = input("c");
-    inside = input("inside");
-    outside = input("outside");
-    trap = input("trap");
-    console.log((Date.now() - t0) / 1000);
-
-    draw();
-//    refresh_orbit();
+    draw(); // implies refresh_orbit();
 }
 function refresh_orbit() {
-    get("portrait").className = "computing";
     compute_orbit();
     restore();
     draw_rulers();
     refresh_info();
 }
-function refresh_info() {
+function refresh_bookmark() {
     var r = [];
     for(var s in ui)
 	for(name in ui[s])
 	    r.push(""+ name +"="+ get(name).value);
     r = encodeURIComponent(r.join("&"));
     get("bookmark").innerHTML = "<a href='#"+ r +"'>bookmark</a>";
+}
+function refresh_info() {
     get("portrait").className = "done";
 }
 function refresh(tab) {
+    get("portrait").className = "computing";
+    get("save").innerHTML = "";
+    read_form();
+    refresh_bookmark();
     ui_refresh[tab]();
 }
 
