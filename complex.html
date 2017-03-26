@@ -807,7 +807,7 @@ function draw_worker() {
 	    p = of_pixel([x, y]);
 	    z0 = z0_func();
 	    z = z0;
-	    for(var j = 0; j < n[0] && !(t = trap(z)); ++j) {
+	    for(var j = 0; !(t = trap(z)) && (j < n[0]); ++j) {
 		k = [j, 0];
 		z = f(z);
 	    }
