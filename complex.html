@@ -495,11 +495,16 @@ function read_bool(id) {
     return read(id);
 }
 function read_data(id) {
-    var r = read(id).split("\n");
-    for(var i in r) {
-	r[i] = r[i].split(" ");
-	for(var j in r[i])
-	    r[i][j] = Number(r[i][j])
+    var d = read(id).split("\n");
+    var r = [];
+    for(var i in d) {
+	var s = d[i].replace(/ *#.*$/, "");
+	if(!s)
+	    continue;
+	s = s.split(" ")
+	r[i] = [];
+	for(var j in s)
+	    r[i].push(Number(s[j]));
     }
     return r;
 }
