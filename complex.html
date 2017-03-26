@@ -385,10 +385,10 @@ function match_complex(s) {
 }
 var list_re_comma = new RegExp(/^,/);
 function match_list(s) {
-    var e, m, v;
-    if((e = match_expr(s)) && (m = match(list_re_comma, e)) && (v = match_list(m)))
+    var e = match_expr(s), m, v;
+    if(e && (m = match(list_re_comma, e)) && (v = match_list(m)))
 	return with_v(v, e.v +","+ v.v);
-    return match_expr(s);
+    return e;
 }
 var vect_re_op = new RegExp(/^\[/);
 var vect_re_cl = new RegExp(/^\]/);
@@ -407,10 +407,10 @@ var call_re_op = new RegExp(/^\(/);
 var call_re_cl = new RegExp(/^\)/);
 var call_re_empty = new RegExp(/^\(\)/);
 function match_call(s) {
-    var f, m, v;
-     if((f = match_id(s)) && (m = match(call_re_op, f)) && (v = match_list(m)) && (m = match(call_re_cl, v)))
+    var f = match_id(s), m, v;
+     if(f && (m = match(call_re_op, f)) && (v = match_list(m)) && (m = match(call_re_cl, v)))
 	return with_v(m, f.v +"("+ v.v +")");
-     if((f = match_id(s)) && (m = match(call_re_empty, f)))
+     if(f && (m = match(call_re_empty, f)))
 	return with_v(m, f.v +"()");
 }
 function match_opnd(s) {
@@ -426,36 +426,36 @@ function match_opnd(s) {
 var pow_re_op = new RegExp(/^\^/);
 var pow_re_alt = new RegExp(/^[²³]/);
 function match_pow(s) {
-    var s1, op, s2;
-    if((s1 = match_opnd(s)) && (op = match(pow_re_op, s1)) && (s2 = match_pow(op)))
+    var s1 = match_opnd(s), op, s2;
+    if(s1 && (op = match(pow_re_op, s1)) && (s2 = match_pow(op)))
 	return with_v(s2, "pow("+ s1.v +", "+ s2.v +")");
-    if((s1 = match_opnd(s)) && (op = match(pow_re_alt, s1)))
+    if(s1 && (op = match(pow_re_alt, s1)))
 	return with_v(op, "pow("+ s1.v +",["+ (op == "³" ? "3" : "2") +",0])");
-    return match_opnd(s);
+    return s1;
 }
 var prod_re_op = new RegExp(/^[*\/]/);
 function match_prod(s) {
-    var s1, op, s2;
-    if((s1 = match_pow(s)) && (op = match(prod_re_op, s1)) && (s2 = match_prod(op)))
+    var s1 = match_pow(s), op, s2;
+    if(s1 && (op = match(prod_re_op, s1)) && (s2 = match_prod(op)))
 	return with_v(s2, (op.v == "/" ? "div" : "mul") +"("+ s1.v +", "+ s2.v +")");
-    return match_pow(s);
+    return s1;
 }
 var sum_re_op = new RegExp(/^[+-]/);
 function match_sum(s) {
-    var s1, op, s2;
-    if((s1 = match_prod(s)) && (op = match(sum_re_op, s1)) && (s2 = match_sum(op)))
+    var s1 = match_prod(s), op, s2;
+    if(s1 && (op = match(sum_re_op, s1)) && (s2 = match_sum(op)))
 	return with_v(s2, (op.v == "-" ? "sub" : "add") +"("+ s1.v +", "+ s2.v +")");
-    return match_prod(s);
+    return s1;
 }
 var other_re_1 = new RegExp(/^(<|>|==|<=|>=|!=)/);
 var other_re_2 = new RegExp(/^(=|\|\||&&)/);
 function match_other(s) {
-    var s1, op, s2;
-    if((s1 = match_sum(s)) && (op = match(other_re_1, s1)) && (s2 = match_sum(op)))
+    var s1 = match_sum(s), op, s2;
+    if(s1 && (op = match(other_re_1, s1)) && (s2 = match_sum(op)))
 	return with_v(s2, s1.v +"[0]"+ op.v + s2.v +"[0]");
-    if((s1 = match_sum(s)) && (op = match(other_re_2, s1)) && (s2 = match_sum(op)))
+    if(s1 && (op = match(other_re_2, s1)) && (s2 = match_sum(op)))
 	return with_v(s2, "(("+ s1.v +")"+ op.v +"("+ s2.v +"))");
-    return match_sum(s);
+    return s1;
 }
 function match_expr(s) {
     return match_other(s);
