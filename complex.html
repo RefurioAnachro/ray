@@ -432,7 +432,13 @@ function compile(name, args, s) {
     if(!e)
 	return console.error("syntax error!");
     e = "// "+ name +"\n_ = function("+ args.join(",") +") {\n  return "+ e.v +";\n}\n";
-    return eval(e);
+    try {
+	return eval(e);
+    }
+    catch(e) {
+	alert(name +": "+ e.message);
+	return function(z) { return [0,0]; };
+    }
 }
 ////////////////////////////////////////////////////////////////
 </script>
@@ -686,46 +692,64 @@ z: complex // the current iteration point<br>
 trap: complex -> boolean // abort iteration when true, then use outside(z) color instead of inside(z) coloring<br>
 <script type="text/javascript">
 function compute_orbit() {
-    var start = input("start");
-    n = input("length");
-    p = c;
-    z0 = z0_func();
-    z = start();
-    orbit = [z];
-    for(var j = 0; j < n; ++j) {
-	k = [j, 0];
-	z = f(z);
-	orbit[j+1] = z;
+    try {
+	var start = input("start");
+	n = input("length");
+	p = c;
+	z0 = z0_func();
+	z = start();
+	orbit = [z];
+	for(var j = 0; j < n; ++j) {
+	    if(isNaN(z[0]+z[1]))
+		break;
+	    k = [j, 0];
+	    z = f(z);
+	    orbit[j+1] = z;
+	}
+    }
+    catch(e) {
+	alert(e.message);
     }
 }
 var k, p, y, z, z0;
-var draw_timeout;
-function draw() {
+var draw_timeout = null;
+function draw_worker() {
     var row = [];
-    for(var x = 0; x < width; ++x) {
-	p = of_pixel([x, y]);
-	z0 = z0_func();
-	z = z0;
-	for(var j = 0; j < n[0] && !(t = trap(z)); ++j) {
-	    k = [j, 0];
-	    z = f(z);
+    try {
+	for(var x = 0; x < width; ++x) {
+	    p = of_pixel([x, y]);
+	    z0 = z0_func();
+	    z = z0;
+	    for(var j = 0; j < n[0] && !(t = trap(z)); ++j) {
+		k = [j, 0];
+		z = f(z);
+	    }
+	    row[x] = t ? outside(z) : inside(z);
+	    if(typeof row[x] == "undefined")
+		row[x] = [0, 0, 0];
 	}
-	row[x] = t ? outside(z) : inside(z);
-	if(typeof row[x] == "undefined")
-	    row[x] = [0, 0, 0];
+    }
+    catch(e) {
+	alert(e.message);
     }
     ++y;
     put_row(0, y, row);
     if(y < height) {
-	draw_timeout = setTimeout(draw, 0);
+	draw_timeout = setTimeout(draw_worker, 0);
 	return
     }
     screen = capture();
     refresh_orbit();
 }
 function stop() {
-    if(draw_timeout)
-	clearTimeout(draw_timeout);
+    clearTimeout(draw_timeout);
+    if(ctx && !screen)
+	screen = capture();
+}
+function draw() {
+    y = 0;
+    screen = null;
+    draw_worker();
 }
 ////////////////////////////////////////////////////////////////
 </script>
