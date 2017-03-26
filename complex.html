@@ -660,7 +660,7 @@ function restore() {
 	ctx.putImageData(screen, 0, 0);
 }
 var orbit;
-function draw_orbit_style(style, xo, yo) {
+function draw_stroke(orbit, style, xo, yo) {
     ctx.beginPath();
     var p = to_pixel(orbit[0]);
     ctx.moveTo(p[0] + xo, p[1] + yo)
@@ -671,10 +671,6 @@ function draw_orbit_style(style, xo, yo) {
     }
     ctx.strokeStyle = style;
     ctx.stroke();
-}
-function draw_orbit() {
-    draw_orbit_style("#000000", 1, 1)
-    draw_orbit_style("#ffffff", 0, 0)
 }
 function draw_cross(xy, style) {
     var r = 12;
@@ -696,6 +692,11 @@ function draw_text(xy, text) {
     ctx.fillText(text, xy[0] + 3, xy[1] - 2);
     ctx.fillStyle = "#ffffff";
     ctx.fillText(text, xy[0] + 2, xy[1] - 3);
+}
+
+function draw_orbit() {
+    draw_stroke(orbit, "#000000", 1, 1)
+    draw_stroke(orbit, "#ffffff", 0, 0)
 }
 function draw_rulers() {
     draw_orbit();
