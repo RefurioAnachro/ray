@@ -1056,9 +1056,8 @@ var presets = {
 };
 
 render();
-apply_preset("view", "default");
 read_args();
-refresh("view");
+apply_preset("view", "url"); // implies refresh("view");
 
 </script>
 </body>
