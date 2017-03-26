@@ -809,8 +809,6 @@ var n;
 var f, z0, z0_func, inside, outside, trap;
 var b, c, d, of_pixel, to_pixel;
 function refresh_func() {
-    stop();
-    get("portrait").className = "computing";
     clear(w, h);
 
     var m = height < width ? height : width;
@@ -850,6 +848,7 @@ function refresh_info() {
     get("portrait").className = "done";
 }
 function refresh(tab) {
+    stop();
     get("portrait").className = "computing";
     get("save").innerHTML = "";
     read_form();
