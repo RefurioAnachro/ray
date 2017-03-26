@@ -9,9 +9,9 @@
 
 <div id="portrait">
   <div id="param"></div>
-  <canvas id="main" width="320" height="320" onclick="canvas_onclick(event)" onmousedown="window.onmousemove=canvas_onclick" onmouseup="window.onmousemove=null" ontouchmove="canvas_onclick(event)"></canvas>
+  <canvas id="main" width="320" height="320" onclick="canvas_onclick(event)" onmousedown="window.onmousemove=canvas_onclick" onmouseup="window.onmousemove=null" onclick="canvas_onclick(event)"></canvas>
   <br>
-  <button id="refresh" onclick="refresh('view')">refresh</button><button id="stop" onclick="stop()">stop</button> right click: <span id="bookmark"></span> <span id="save">save</span>
+  <button id="refresh" onclick="refresh('view')">refresh</button><button id="stop" onclick="stop()">stop</button> right click: <span id="bookmark"></span> <span id="save"></span>
 </div>
 
 <style>
