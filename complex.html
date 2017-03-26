@@ -567,8 +567,8 @@ var input_types = {
     },
 };
 function input(n) {
-    for(tab in ui)
-	for(name in ui[tab])
+    for(var tab in ui)
+	for(var name in ui[tab])
 	    if(name == n) {
 		var t = ui[tab][name];
 		return input_types[t].input(name);
