@@ -376,7 +376,7 @@ var complex_re_i = new RegExp(/^i/);
 var complex_re_noid = new RegExp(/^[^a-zA-Z0-9_]|$/);
 function match_complex(s) {
     var m, n;
-    if((m = match(complex_re_i, s)) && (match(complex_noid, m)))
+    if((m = match(complex_re_i, s)) && (match(complex_re_noid, m)))
 	return with_v(m, "[0,1]");
     if((n = match_float(s)) && (m = match(complex_re_i, n)))
 	return with_v(m, "[0,"+ n.v +"]");
