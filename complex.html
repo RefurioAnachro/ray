@@ -8,7 +8,7 @@
 <body>
 
 <div id="portrait">
-  <div id="param"></div>
+  <div id="param" style="background-color: #8b0000; color: #ffffff">We don`t need no server, but we <i>do need</i> <b>javascript</b>!</div>
   <canvas id="main" width="320" height="320" onclick="canvas_onclick(event)" onmousedown="window.onmousemove=canvas_onclick" onmouseup="window.onmousemove=null" onclick="canvas_onclick(event)"></canvas>
   <br>
   <button id="refresh" onclick="refresh('view')">refresh</button><button id="stop" onclick="stop()">stop</button> right click: <span id="bookmark"></span> <span id="save"></span>
@@ -17,6 +17,11 @@
 <style>
   * {
     font-size: 12pt;
+    background-color: #242424;
+    color: #ffffff;
+  }
+  canvas {
+    background-color: transparent;
   }
   .tab h2 ,
   input ,
@@ -45,6 +50,8 @@
   }
   h3 {
     font-size: 12pt;
+    background-color: transparent;
+    color: #000000;
   }
 
   p {
@@ -86,7 +93,7 @@
     border-bottom: none;
   }
   .tab.open h2 {
-    background-color: #bebeff;
+    background-color: #4444aa;
   }
 
   .param > .blind {
@@ -111,9 +118,6 @@
       visibility: visible;
   }
 
-  .computing {
-    background-color: #ffbebe;
-  }
   .computing #refresh {
     display: none;
   }
@@ -122,6 +126,7 @@
   }
   .computing #stop {
     display: inline-block;
+    background-color: #8b0000;
   }
 
 @media (max-width: 320px) {
@@ -259,7 +264,7 @@ function sharp(t) {
 </script>
 
 <h1>complex measure functions</h1>
-axes(z)
+axes(z) grid(z) annulus(r1, r2, z)
 <script type="text/javascript">
 function axes(z) {
     return sharp([arg(z)[0]/Math.PI,0]);
@@ -894,7 +899,7 @@ function center_at(c) {
     refresh("view");
 }
 function scale_radius(s) {
-    write_complex("radius", s*read("radius"));
+    write_complex("radius", smul(s, read_complex("radius")));
     refresh("view");
 }
 function apply_preset(tab, p) {
@@ -1035,6 +1040,9 @@ var presets = {
 	},
 	"grid": {
 	    "inside": "hsv(\n  phase(z),\n  1-annulus(\n    0.25,\n    0.5,\n    grid(z-0.5+0.5i)*2-1+1i\n  ),\n  1\n)",
+	},
+	"foo": {
+	    "inside": "hsv(phase(z), abs(grid(z)-0.5+0.5i), 0.5+grid(ln(1/z)))",
 	},
     },
 };
