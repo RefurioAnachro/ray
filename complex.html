@@ -3,7 +3,7 @@
 <head>
   <meta http-equiv="content-type" content="text/html; charset=UTF-8">
   <meta name="viewport" content="width=device-width, user-scalable=yes">
-  <title>Refurio Anachro`s portable phase portrait plotter .2</title>
+  <title>Refurio Anachro`s portable phase portrait plotter (.3)</title>
 </head>
 <body>
 
@@ -536,21 +536,39 @@ function write_complex(id, value) {
     write(id, string_of_complex(value));
 }
 
-/* read arguments */
-function read_args() {
-    presets.view.initial = presets.view.default;
-    var r = window.location.hash.substr(1);
+/* read parameters from url */
+function clone(a) {
+    if(typeof a != "object")
+	return a;
+    var ret = {};
+    for(var i in a)
+	ret[i] = clone(a[i]);
+    return ret;
+}
+function read_url() {
+    presets.view.url = clone(presets.view.default);
+    var r = location.href.split("#")[1];
+    if(typeof r == "undefined")
+	return;
     r = decodeURIComponent(r);
     r = r.split("&");
-    for(i in r) {
+    for(var i in r) {
 	var s = r[i].split("=");
 	var n = s.shift();
 	var v = s.join("=");
 	if(!n)
 	    continue;
-	if(v != presets.view.default[n])
-	    presets.view.initial[n] = v;
+	presets.view.url[n] = v;
     }
+}
+function refresh_bookmark() {
+    var r = [];
+    for(var tab in ui)
+	for(var name in ui[tab])
+	    if(get(name).value != presets.view.default[name])
+		r.push(""+ name +"="+ get(name).value);
+    r = encodeURIComponent(r.join("&"));
+    get("bookmark").innerHTML = "<a href='#"+ r +"'>bookmark</a>";
 }
 
 /* widgets */
@@ -811,6 +829,7 @@ function draw_worker() {
     refresh_orbit();
 }
 function stop() {
+    get("portrait").className = "done";
     clearTimeout(draw_timeout);
     capture();
 }
@@ -852,18 +871,7 @@ function refresh_orbit() {
     compute_orbit();
     restore();
     draw_rulers();
-    refresh_info();
-}
-function refresh_bookmark() {
-    var r = [];
-    for(var s in ui)
-	for(name in ui[s])
-	    r.push(""+ name +"="+ get(name).value);
-    r = encodeURIComponent(r.join("&"));
-    get("bookmark").innerHTML = "<a href='#"+ r +"'>bookmark</a>";
-}
-function refresh_info() {
-    get("portrait").className = "done";
+    stop();
 }
 function refresh(tab) {
     stop();
@@ -939,7 +947,7 @@ var ui_refresh = {
     "iter": refresh_func,
     "color": refresh_func,
     "orbit": refresh_orbit,
-    "info": refresh_info,
+    "info": stop,
 };
 var presets = {
     "view": {
@@ -987,14 +995,13 @@ var presets = {
 
 	    // info
 	    "info":    [
-		"A portable phase portrait plotter for iterated complex functions.",
-		"    (c) 2017 by Refurio Anachro",
+		"A portable phase portrait plotter for iterated complex functions (.3)",
 		"",
-		"This file belongs to the public domain!",
+		"(c) 2017 by Refurio Anachro,",
+		"this file belongs to the public domain!",
 	    ].join("\n"),
 	},
-	"initial": {
-	}
+	"url": {},
     },
     "func": {
 	"Mandelbrot": {
@@ -1073,7 +1080,7 @@ var presets = {
 };
 
 render();
-read_args();
+read_url();
 apply_preset("view", "url"); // implies refresh("view");
 
 </script>
