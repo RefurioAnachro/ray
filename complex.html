@@ -486,6 +486,14 @@ function string_of_complex(value) {
 }
 
 /* dom functions */
+function clone(a) {
+    if(typeof a != "object")
+	return a;
+    var ret = {};
+    for(var i in a)
+	ret[i] = clone(a[i]);
+    return ret;
+}
 function get(n) {
     return document.getElementById(n);
 }
@@ -496,7 +504,7 @@ function read(id) {
     console.error("read("+ id +"): undefined");
     return null;
 }
-function read_js(id) {
+function read_func(id) {
     return compile(id, ["z"], read(id));
 }
 function read_complex(id) {
@@ -508,9 +516,6 @@ function read_real(id) {
 }
 function read_int(id) {
     return Math.floor(read_real(id));
-}
-function read_bool(id) {
-    return read(id);
 }
 function read_data(id) {
     var d = read(id).split("\n");
@@ -537,14 +542,6 @@ function write_complex(id, value) {
 }
 
 /* read parameters from url */
-function clone(a) {
-    if(typeof a != "object")
-	return a;
-    var ret = {};
-    for(var i in a)
-	ret[i] = clone(a[i]);
-    return ret;
-}
 function read_url() {
     presets.view.url = clone(presets.view.default);
     var r = location.href.split("#")[1];
@@ -563,100 +560,40 @@ function read_url() {
 }
 function refresh_bookmark() {
     var r = [];
-    for(var tab in ui)
-	for(var name in ui[tab])
-	    if(get(name).value != presets.view.default[name])
-		r.push(""+ name +"="+ get(name).value);
+    for(var i in inputs) {
+	var name = inputs[i];
+	if(get(name).value != presets.view.default[name])
+	    r.push(""+ name +"="+ get(name).value);
+    }
     r = encodeURIComponent(r.join("&"));
     get("bookmark").innerHTML = "<a href='#"+ r +"'>bookmark</a>";
 }
 
 /* widgets */
-var input_types = {
-    func: {
-	widget: render_textarea,
-	input: read_js,
-    },
-    complex: {
-	widget: render_input,
-	input: read_complex,
-    },
-    real: {
-	widget: render_input,
-	input: read_real,
-    },
-    int: {
-	widget: render_int,
-	input: read_int,
-    },
-    bool: {
-	widget: render_checkbox,
-	input: read_bool,
-    },
-    data: {
-	widget: render_textarea,
-	input: read,
-    },
-    text: {
-	widget: render_textarea,
-	input: read,
-    },
-};
-function input(n) {
-    for(var tab in ui)
-	for(var name in ui[tab])
-	    if(name == n) {
-		var t = ui[tab][name];
-		return input_types[t].input(name);
-	    }
-    console.error("input("+ n +"): not found");
-}
 function render_textarea(name) {
-    return "<textarea id='"+ name +"'></textarea>\n";
+    return "<h3>"+ name +"</h3><textarea id='"+ name +"'></textarea>\n";
 }
 function render_input(name) {
-    return "<input id='"+ name +"'>\n";
+    return "<h3>"+ name +"</h3><input id='"+ name +"'>\n";
 }
 function render_int(name) {
-    return "<input id='"+ name +"' type='number'>\n";
+    return "<h3>"+ name +"</h3><input id='"+ name +"' type='number'>\n";
 }
-function render_checkbox(name) {
-    return "<checkbox id='"+ name +">\n";
-}
-function render_widget(tab, name, decl) {
-    var t = decl;
-    return input_types[t].widget(name, "") +"\n";
+function render_button(label, script) {
+    return "<br><button onclick='"+ script +"'>"+ label +"</button>";
 }
 function render_box(b) {
     return "<div class='box'>\n"+ b +"</div>\n";
 }
 function render_tab(n, t) {
+    t = "<h2 onclick='open_tab(event)'>"+ n +"</h2>\n" + render_box(t + "<hr>\n"+ render_presets(n));
     return "<div class='tab' onchange='refresh(\""+ n +"\")'>\n"+ t +"</div>\n";
 }
 function render_presets(tab) {
-    var t = "<h2 onclick='open_tab(event)'>preset</h2>\n";
     var r = "";
     for(var p in presets[tab])
 	r += "<button onclick='apply_preset(\""+ tab +"\", \""+ p +"\")'>"+ p +"</button><br/>\n";
     return r;
-}
-function render_param() {
-    var r = "";
-    for(var tab in ui) {
-	var t = "<h2 onclick='open_tab(event)'>"+ tab +"</h2>\n";
-	var b = "";
-	for(var name in ui[tab]) {
-	    b += "<h3>"+ name +"</h3>\n";
-	    b += render_widget(tab, name, ui[tab][name]) + "\n";
-	}
-	b += "<hr/>"+ render_presets(tab);
-	r += render_tab(tab, t + render_box(b));
-    }
-    r += "<span class='blind' onclick='close_tabs(); event.stopPropagation()'>&nbsp;</span>\n";
-    return "<div class='param' id='param'>\n"+ r +"</div>\n"
-}
-function render() {
-    get("param").outerHTML = render_param();
 }
 
 /* graphics api */
@@ -730,20 +667,23 @@ function draw_text(xy, text) {
     ctx.fillText(text, xy[0] + 2, xy[1] - 3);
 }
 
+function draw_point(c) {
+    var z = to_pixel(c), l = string_of_complex(c);
+    draw_coord(z);
+    draw_text(z, l);
+}
 function draw_orbit() {
     draw_stroke(orbit, "#000000", 1, 1)
     draw_stroke(orbit, "#ffffff", 0, 0)
 }
 function draw_rulers() {
     draw_orbit();
-    var z = to_pixel(c), l = string_of_complex(c);
-    draw_coord(z);
-    draw_text(z, l);
+    draw_point(c);
 }
 ////////////////////////////////////////////////////////////////
 </script>
 
-<h1>the main loop</h1>
+<h1>parameters</h1>
 n: integer // maximum number of iterations<br>
 k: integer // current number of iterations<br>
 p: complex // current pixel`s coordinate<br>
@@ -757,42 +697,87 @@ var f, z0_func, c, data;
 var n, b, trap;
 var inside, outside;
 var start, length;
-function read_form() {
-    w = read("width");
-    h = read("height");
-    center = input("center");
-    radius = input("radius");
+var inputs = [
+    "width", "height",
+    "center", "radius",
+    "f(z)", "z0", "c", "data",
+    "n", "b", "trap",
+    "inside", "outside",
+    "length", "start",
+];
+function render_form() {
+    var s = "";
+    s += render_tab("view", [
+        render_input("center"),
+        render_input("radius"), 
+	render_int("width"),
+	render_int("height"),
+	render_button("center at c", "center_at(c)"),
+	render_button("double radius", "scale_radius(2)"),
+	render_button("halve radius", "scale_radius(0.5)"),
+    ].join("\n"));
+    s += render_tab("func", [
+	render_textarea("f(z)"),
+	render_textarea("z0"),
+	render_input("c"),
+	render_textarea("data"),
+    ].join("\n"));
+    s += render_tab("iter", [
+	render_int("n"),
+	render_int("b"),
+	render_textarea("trap"),
+    ].join("\n"));
+    s += render_tab("color", [
+	render_textarea("inside"),
+	render_textarea("outside"),
+	render_button("swap colors", "swap_colors()"),
+    ].join("\n"));
+    s += render_tab("orbit", [
+	render_int("length"),
+	render_input("start"),
+    ].join("\n"));
+    s += render_tab("info", [
+	render_textarea("info"),
+    ].join("\n"));
 
-    f = input("f(z)");
-    z0_func = input("z0");
-    c = input("c");
+    s += "<span class='blind' onclick='close_tabs(); event.stopPropagation()'>&nbsp;</span>\n";
+    s = "<div class='param' id='param'>\n"+ s +"</div>\n";
+    get("param").outerHTML = s;
+}
+function read_form() {
+    w = read_int("width");
+    h = read_int("height");
+    center = read_complex("center");
+    radius = read_complex("radius");
+
+    f = read_func("f(z)");
+    z0_func = read_func("z0");
+    c = read_complex("c");
     data = read_data("data");
 
-    n = [input("n"), 0];
-    b = [input("b"), 0];
-    trap = input("trap");
+    n = [read_int("n"), 0];
+    b = read_complex("b");
+    trap = read_func("trap");
 
-    inside = input("inside");
-    outside = input("outside");
+    inside = read_func("inside");
+    outside = read_func("outside");
 
-    start = input("start");
-    length = input("length");
-
-    init_traf(w, h);
+    start = read_func("start");
+    length = read_int("length");
 }
 
-var traf_a, traf_b;
-function init_traf(width, height) {
+var coord_a, coord_b;
+function init_coordinates(width, height) {
     var m = height < width ? height/2 : width/2;
-    traf_a = div(radius,[m,0]);
-    traf_b = center;
+    coord_a = div(radius,[m,0]);
+    coord_b = center;
 }
 function of_pixel(z) {
     z = conj([ z[0] - width/2, z[1] - height/2 ]);
-    return sub(mul(z,traf_a), traf_b);
+    return add(mul(z,coord_a), coord_b);
 }
 function to_pixel(z) {
-    z = conj(div(add(z,traf_b),traf_a));
+    z = conj(div(sub(z,coord_b),coord_a));
     return [ z[0] + width/2, z[1] + height/2 ];
 }
 
@@ -855,14 +840,8 @@ function draw() {
     screen = null;
     draw_worker();
 }
+
 ////////////////////////////////////////////////////////////////
-</script>
-
-<script type="text/javascript">
-
-var n;
-var f, z0, z0_func, inside, outside, trap;
-var b, c, d, of_pixel, to_pixel;
 function refresh_func() {
     clear(w, h);
     k = [0,0];
@@ -879,11 +858,18 @@ function refresh(tab) {
     get("portrait").className = "computing";
     get("save").innerHTML = "";
     read_form();
+    init_coordinates(w, h);
     refresh_bookmark();
     ui_refresh[tab]();
 }
 
 /* event handlers */
+function close_tabs() {
+    var node = get("param");
+    for(var m = node.firstElementChild; m; m = m.nextElementSibling)
+	if(m.className == "tab open")
+	    m.className = "tab";
+}
 function open_tab(event) {
     var n = event.target.parentNode;
     var p = n.parentNode;
@@ -891,17 +877,25 @@ function open_tab(event) {
     close_tabs();
     n.className = t ? "tab" : "tab open";
 }
-function close_tabs() {
-    var node = get("param");
-    for(var m = node.firstElementChild; m; m = m.nextElementSibling)
-	if(m.className == "tab open")
-	    m.className = "tab";
-}
 function canvas_onclick(event) {
     stop();
     c = of_pixel([ event.offsetX, event.offsetY ]);
     write_complex("c", c);
     refresh_orbit();
+}
+function swap_colors() {
+    var i = read("inside"), o = read("outside");
+    write("inside", o);
+    write("outside", i);
+    refresh("color");
+}
+function center_at(c) {
+    write_complex("center", c);
+    refresh("view");
+}
+function scale_radius(s) {
+    write_complex("radius", s*read("radius"));
+    refresh("view");
 }
 function apply_preset(tab, p) {
     console.log("apply_preset("+ tab +","+ p +")");
@@ -912,36 +906,6 @@ function apply_preset(tab, p) {
     refresh(tab);
 }
 
-var ui = {
-    "view": {
-	"center":     "complex",
-	"radius":     "complex",
-	"width":      "int",
-	"height":     "int",
-    },
-    "func": {
-	"f(z)":       "func",
-	"z0":         "func",
-	"c":          "complex",
-	"data":       "data",
-    },
-    "iter": {
-	"n":          "int",
-	"b":          "int",
-	"trap":       "func",
-    },
-    "color": {
-	"inside":     "func",
-	"outside":    "func",
-    },
-    "orbit": {
-	"length":     "int",
-	"start":      "func",
-    },
-    "info": {
-	"info":       "text",
-    },
-};
 var ui_refresh = {
     "view": refresh_func,
     "func": refresh_func,
@@ -1075,7 +1039,7 @@ var presets = {
     },
 };
 
-render();
+render_form();
 read_url();
 apply_preset("view", "url"); // implies refresh("view");
 
