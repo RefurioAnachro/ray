@@ -777,6 +777,23 @@ function read_form() {
 
     start = input("start");
     length = input("length");
+
+    init_traf(w, h);
+}
+
+var traf_a, traf_b;
+function init_traf(width, height) {
+    var m = height < width ? height/2 : width/2;
+    traf_a = div(radius,[m,0]);
+    traf_b = center;
+}
+function of_pixel(z) {
+    z = conj([ z[0] - width/2, z[1] - height/2 ]);
+    return sub(mul(z,traf_a), traf_b);
+}
+function to_pixel(z) {
+    z = conj(div(add(z,traf_b),traf_a));
+    return [ z[0] + width/2, z[1] + height/2 ];
 }
 
 function compute_orbit() {
@@ -842,28 +859,12 @@ function draw() {
 </script>
 
 <script type="text/javascript">
+
 var n;
 var f, z0, z0_func, inside, outside, trap;
 var b, c, d, of_pixel, to_pixel;
 function refresh_func() {
     clear(w, h);
-
-    var m = height < width ? height : width;
-    var a00 =  2*radius/m, a01 = + center[0] - radius*width/m;
-    var a10 = -2*radius/m, a11 = + center[1] + radius*height/m;
-    of_pixel = function(z) {
-	return [
-	    a00*z[0] + a01,
-	    a10*z[1] + a11,
-	]
-    };
-    to_pixel = function(z) {
-	return [
-	    Math.floor((z[0] - a01)/a00),
-	    Math.floor((z[1] - a11)/a10),
-	];
-    };
-
     k = [0,0];
     draw(); // implies refresh_orbit();
 }
