@@ -627,6 +627,8 @@ function render() {
 var canvas, ctx, row;
 var width, height;
 function clear(w, h) {
+    if(width == w && height == h)
+	return;
     width = w;
     height = h;
     canvas = get("main");
@@ -646,13 +648,16 @@ function put_row(x, y, r) {
     }
     ctx.putImageData(row, x, y);
 }
+var screen = null;
 function capture() {
-    get("save").innerHTML = "<a href='"+ canvas.toDataURL("image/png") +"'>save</a>\n";
-    return ctx.getImageData(0, 0, width, height);
+    if(ctx && !screen) {
+	screen = ctx.getImageData(0, 0, width, height);
+	get("save").innerHTML = "<a href='"+ canvas.toDataURL("image/png") +"'>save</a>\n";
+    }
 }
-function restore(data) {
-    if(data)
-	ctx.putImageData(data, 0, 0);
+function restore() {
+    if(screen)
+	ctx.putImageData(screen, 0, 0);
 }
 var orbit;
 function draw_orbit_style(style, xo, yo) {
@@ -692,7 +697,6 @@ function draw_text(xy, text) {
     ctx.fillStyle = "#ffffff";
     ctx.fillText(text, xy[0] + 2, xy[1] - 3);
 }
-var screen = null;
 function draw_rulers() {
     draw_orbit();
     var z = to_pixel(c), l = string_of_complex(c);
@@ -757,13 +761,12 @@ function draw_worker() {
 	draw_timeout = setTimeout(draw_worker, 0);
 	return
     }
-    screen = capture();
+    capture();
     refresh_orbit();
 }
 function stop() {
     clearTimeout(draw_timeout);
-    if(ctx && !screen)
-	screen = capture();
+    capture();
 }
 function draw() {
     y = 0;
@@ -782,8 +785,7 @@ function refresh_func() {
     get("portrait").className = "computing";
     var w = read("width");
     var h = read("height");
-    if(width != w || height != h)
-	clear(w, h);
+    clear(w, h);
 
     var center = input("center");
     var radius = Number(read("radius"));
@@ -816,14 +818,13 @@ function refresh_func() {
     trap = input("trap");
     console.log((Date.now() - t0) / 1000);
 
-    y = 0;
     draw();
 //    refresh_orbit();
 }
 function refresh_orbit() {
     get("portrait").className = "computing";
     compute_orbit();
-    restore(screen);
+    restore();
     draw_rulers();
     refresh_info();
 }
