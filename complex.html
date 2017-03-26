@@ -1065,14 +1065,11 @@ var presets = {
 	"axes (b&w)": {
 	    "inside":  "hsv(0, 0, axes(z))",
 	},
-//	"grid": {
-//	    "inside":  "hsv(phase(z), 1, 1-annulus(0.5,0.75,grid(1,1,z)))",
-//	},
-	"red/blue": {
-	    "inside":  "rgb((abs(z)<1) ? 0 : sharp(abs(inv(z))), 0, (abs(z)>1) ? 0 : sharp(abs(z)))",
-	},
 	"domain coloring": {
 	    "inside": "domain(0.1, 1, z)",
+	},
+	"grid": {
+	    "inside": "hsv(\n  phase(z),\n  1-annulus(\n    0.25,\n    0.5,\n    grid(z-0.5+0.5i)*2-1+1i\n  ),\n  1\n)",
 	},
     },
 };
