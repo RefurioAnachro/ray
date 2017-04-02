@@ -233,6 +233,16 @@ function ln(z) {
 function pow(b, e) {
     return exp(mul(e,ln(b)))
 }
+function sqrt(z) {
+    return pow(z, [0.5,0]);
+}
+
+function sin(z) {
+    return div(sub(exp([-z[1],z[0]]), exp([z[1],-z[0]])), [2,0]);
+}
+function cos(z) {
+    return div(add(exp([-z[1],z[0]]), exp([z[1],-z[0]])), [2,0]);
+}
 ////////////////////////////////////////////////////////////////
 </script>
 
