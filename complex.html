@@ -238,7 +238,7 @@ function sqrt(z) {
 }
 
 function sin(z) {
-    return div(sub(exp([-z[1],z[0]]), exp([z[1],-z[0]])), [2,0]);
+    return div(sub(exp([-z[1],z[0]]), exp([z[1],-z[0]])), [0,2]);
 }
 function cos(z) {
     return div(add(exp([-z[1],z[0]]), exp([z[1],-z[0]])), [2,0]);
