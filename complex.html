@@ -167,7 +167,7 @@ function smul(s, v) {
 </script>
 
 <h1>complex functions</h1>
-re(z) im(z) mul(w,z) div(w,z) inv(z) conj(z) neg(z) abs(z) arg(z) sqr(z) exp(z) ln(z) pow(z)
+re(z) im(z) mul(w,z) div(w,z) inv(z) conj(z) neg(z) abs(z) arg(z) sqr(z) exp(z) ln(z) pow(z) sin(z) cos(z) tan(z) asin(z) acos(z) atan(z)
 <script type="text/javascript">
 var pi = [ Math.PI, 0 ];
 
@@ -242,6 +242,35 @@ function sin(z) {
 }
 function cos(z) {
     return div(add(exp([-z[1],z[0]]), exp([z[1],-z[0]])), [2,0]);
+}
+function tan(z) {
+    return div(sin(z), cos(z));
+}
+function asin(z) {
+    return mul([0,-1], ln(add(mul([0,1],z), sqrt(sub([1,0],mul(z,z))))));
+}
+function acos(z) {
+    return mul([0,-1], ln(add(z,            sqrt(sub(mul(z,z),[1,0])))));
+}
+function atan(z) {
+    return mul([0, 0.5], ln(div(sub(1,mul([0,1],z)),add(1,mul([0,1],z)))));
+}
+
+function sinh(z) {
+    return mul([0,-1], sin(mul([0,1],z)));
+}
+function cosh(z) {
+    return             cos(mul([0,1],z));
+}
+function tanh(z) {
+    return mul([0,-1], tan(mul([0,1],z)));
+}
+
+function min(a, b) {
+    return abs(a)[0] < abs(b)[0] ? a : b;
+}
+function max(a, b) {
+    return abs(a)[0] < abs(b)[0] ? b : a;
 }
 ////////////////////////////////////////////////////////////////
 </script>
