@@ -370,6 +370,31 @@ function hsv(h, s, v) {
 	case 5: return [v, p, q]
     }
 }
+// stolen from http://stackoverflow.com/questions/3407942/rgb-values-of-visible-spectrum/22681410#22681410
+function nm(l) { // RGB <0,1> <- lambda l <400,700> [nm]
+    l = l[0];
+    var t, r=0.0, g=0.0, b=0.0;
+         if ((l>=400)&&(l<410)) { t=(l-400)/(410-400); r=    +(0.33*t)-(0.20*t*t); }
+    else if ((l>=410)&&(l<475)) { t=(l-410)/(475-410); r=0.14         -(0.13*t*t); }
+    else if ((l>=545)&&(l<595)) { t=(l-545)/(595-545); r=    +(1.98*t)-(     t*t); }
+    else if ((l>=595)&&(l<650)) { t=(l-595)/(650-595); r=0.98+(0.06*t)-(0.40*t*t); }
+    else if ((l>=650)&&(l<700)) { t=(l-650)/(700-650); r=0.65-(0.84*t)+(0.20*t*t); }
+         if ((l>=415)&&(l<475)) { t=(l-415)/(475-415); g=             +(0.80*t*t); }
+    else if ((l>=475)&&(l<590)) { t=(l-475)/(590-475); g=0.8 +(0.76*t)-(0.80*t*t); }
+    else if ((l>=585)&&(l<639)) { t=(l-585)/(639-585); g=0.84-(0.84*t)           ; }
+         if ((l>=400)&&(l<475)) { t=(l-400)/(475-400); b=    +(2.20*t)-(1.50*t*t); }
+    else if ((l>=475)&&(l<560)) { t=(l-475)/(560-475); b=0.7 -(     t)+(0.30*t*t); }
+    return [r, g, b];
+}
+function spectrum(z) {
+    return nm([400 + arg(z)[0]*300/Math.PI/2+150, 0]);
+}
+function checkerboard(c) {
+    var white =
+	(Math.abs(c[0]) % 2 > 1) ^ (c[0] > 0) ^
+        (Math.abs(c[1]) % 2 > 1) ^ (c[1] > 0);
+    return white ? [1, 1, 1] : [0, 0, 0];
+}
 ////////////////////////////////////////////////////////////////
 </script>
 
@@ -1073,6 +1098,10 @@ var presets = {
 	},
 	"grid": {
 	    "inside": "hsv(\n  phase(z),\n  1-annulus(\n    0.25,\n    0.5,\n    grid(z-0.5+0.5i)*2-1+1i\n  ),\n  1\n)",
+	},
+	"spectrum": {
+	    "inside": "add(hsv(0,0,axes(z)), nm(400+(700-400)*(phase(z)+0.5)))",
+	    "inside": "nm(400+(700-400)*(phase(z)+0.5))",
 	},
     },
 };
