@@ -662,6 +662,8 @@ function render_presets(tab) {
 /* graphics api */
 var canvas, ctx, row;
 var width, height;
+var pixel_id;
+var pixel_data;
 function clear(w, h) {
     if(width == w && height == h)
 	return;
@@ -671,6 +673,8 @@ function clear(w, h) {
     ctx = canvas.getContext("2d");
     canvas.setAttribute("width", width);
     canvas.setAttribute("height", height);
+    pixel_id = ctx.createImageData(1, 1);
+    pixel_data = pixel_id.data;
     row = ctx.createImageData(width, 1);
     for(var i = 0; i < width; ++i)
 	row.data[4*i + 3] = 255; /* alpha: fully opaque */
@@ -708,6 +712,22 @@ function draw_stroke(orbit, style, xo, yo) {
     ctx.strokeStyle = style;
     ctx.stroke();
 }
+function draw_pixel(x, y, r, g, b) {
+    pixel_data[0] = 255*r;
+    pixel_data[1] = 255*g;
+    pixel_data[2] = 255*b;
+    pixel_data[3] = 255;
+    ctx.putImageData(pixel_id, x, y);
+}
+function draw_dust(orbit) {
+    var p = to_pixel(orbit[0]);
+    draw_pixel(p[0], p[1], 0,0,0);
+    var n = orbit.length;
+    for(var k = 0; k < n; ++k) {
+	p = to_pixel(orbit[k]);
+	draw_pixel(p[0], p[1], 1, 1, 1);
+    }
+}
 function draw_cross(xy, style) {
     var r = 12;
     ctx.beginPath();
@@ -736,6 +756,7 @@ function draw_point(c) {
     draw_text(z, l);
 }
 function draw_orbit() {
+//    draw_dust(orbit); return;
     draw_stroke(orbit, "#000000", 1, 1)
     draw_stroke(orbit, "#ffffff", 0, 0)
 }
