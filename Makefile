@@ -1,5 +1,5 @@
 
-MANIFEST_FILES = complex.html ray.html
+MANIFEST_FILES = complex.html ray.html portrait.html
 
 appcache: $(MANIFEST_FILES)
 	echo 'CACHE MANIFEST' > appcache

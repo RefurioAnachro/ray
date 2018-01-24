@@ -1,0 +1,1264 @@
+<!DOCTYPE html>
+<html xmlns="www.w3.org/1999/xhtml" xml:lang="en" manifest="appcache">
+<head>
+  <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+  <meta name="viewport" content="width=device-width, user-scalable=yes">
+  <title>Refurio Anachro`s complex function plotter v0.99.1</title>
+</head>
+<body>
+
+<div id="portrait">Without javascript, all functions are constant.</div>
+
+<style>
+  body {
+    background-color: #000000;
+  }
+  * {
+    color: #ffffff;
+    margin: 0px;
+    padding: 0px;
+    font-family: sans-serif;
+  }
+  li {
+    margin-left: 1.5em;
+    line-height: 2em;
+  }
+  li button {
+    font-size: 100%;
+  }
+
+  #portrait {
+    margin: auto;
+  }
+  canvas {
+    background-color: transparent;
+    vertical-align: top;
+  }
+  #wrap_orbit , #wrap_portrait {
+    display: inline;
+  }
+  #wrap_orbit {
+    position: absolute;
+    left: 0px;
+    top: 0px;
+  }
+  button ,
+  textarea ,
+  input {
+    font-size: 120%;
+    background-color: #222222;
+    border: 1px solid #555555;
+    padding-left: 1ex;
+    padding-right: 1ex;
+    padding-top: 0.1ex;
+    padding-bottom: 0.1ex;
+    border-radius: 1ex;
+  }
+  textarea {
+    height: 4em;
+    font-size: 100%;
+    width: 16em;
+  }
+  input[type=number] {
+    width: 10ex;
+  }
+  input[disabled] {
+    font-style: italic;
+    color: #777777;
+  }
+
+  .computing #refresh {
+    display: none;
+  }
+  #stop {
+    display: none;
+  }
+  .computing #stop {
+    display: inline-block;
+    background-color: #8b0000;
+  }
+
+  .box {
+    background-color: #222222;
+    padding-left: 1ex;
+    padding-right: 1ex;
+    margin-top: 1ex;
+    border-radius: 1ex;
+  }
+  .box > b {
+    margin: 0px;
+    border-top-right-radius: 1ex;
+    border-top-left-radius: 1ex;
+    padding-top: 0.5ex;
+    padding-left: 1ex;
+    padding-right: 1ex;
+    margin-left: -1ex;
+    width: 100%;
+    display: block;
+    background-color: #333333;
+    color: #aaaaaa;
+  }
+  .box > div {
+    margin-top: 1ex;
+    margin-bottom: 1ex;
+  }
+  .box > hr.box-end {
+    height: 0px;
+    border: 0px;
+    padding-bottom: 1em;
+  }
+  .label {
+    width: 100%;
+    font-style: italic;
+    color: #777777;
+  }
+
+  #ui {
+    margin: 1em;
+    display: inline-block;
+  }
+
+  .mini > .box > * {
+    display: none;
+  }
+  .mini > .box > .pinned ,
+  .mini > .box.pinned > * {
+    display: block;
+  }
+  .pinned > * ,
+  .box.pinned > * {
+    color: yellow;
+  }
+
+  .saved a {
+    margin: 10px;
+  }
+
+  .story {
+      max-width: 72ex;
+  }
+</style>
+
+<script type="text/javascript">
+////////////////////////////////////////////////////////////////
+
+var Input = {
+    box: function(name, contents) {
+	var js = 'toggle_class(event.target.parentElement, "pinned")';
+	return "<div class='box "+ name +"'>\n<b onclick='"+ js +"'>"+ name +"</b>\n"+ contents +"\n<hr class='box-end'></div>";
+    },
+    label: function(name) {
+	var js = 'toggle_class(event.target.parentElement, "pinned")';
+	return "<div class='label' onclick='"+ js +"'>"+ name +"</div>";
+    },
+    wrap: function(name, contents) {
+	return "<div class='"+ name +"'>"+ this.label(name) + contents +"\n</div>";
+    },
+    button: function(js) {
+	return function(name) {
+	    return "<button id='"+ name +"' onclick=\""+ js +"\">"+ name +"</button>";
+	};
+    },
+    html: function(html) {
+	return function(_) {
+	    return html;
+	};
+    },
+    quote: function(s) {
+	return s.replace("'", "&apos;");
+    },
+
+    input: function(name) {
+	return this.wrap(name, "<input id='"+ name +"'>");
+    },
+    info: function(name) {
+	return this.wrap(name, "<input id='"+ name +"' disabled>");
+    },
+    int: function(name) {
+	return this.wrap(name, "<input id='"+ name +"' type='number'>");
+    },
+    data: function(name) {
+	return this.wrap(name, "<textarea id='"+ name +"'></textarea>");
+    },
+    func: function(name, buttons) {
+	if(typeof buttons == "undefined")
+	    buttons = "";
+	return this.wrap(name, "<input id='"+ this.quote(name) +"'>"+ buttons);
+    },
+    nop: function(name) {
+	return "";
+    },
+    extra: function(extra) {
+	return function(name) {
+	    var ret = [];
+	    for(var i in extra)
+		if(extra[i])
+		    ret.push(this.func(i, "<button onclick='del_extra(\""+ i +"\")'>-</button>"));
+	    var js = 'add_extra()';
+	    var footer = "<div class='label'>create new parameter or function:</div>"+
+		"<input type='string' id='extra_name'>"+
+		"<button id='"+ name +"' onclick='"+ js +"'>+</button>";
+	    return ret.join("\n") +"\n<div class='extra'>"+ footer +"</div>\n";
+	};
+    },
+    canvas: function(name) {
+	var click = 'canvas_onclick(event)';
+	var down = 'window.onmousemove=canvas_onclick';
+	var up = 'window.onmousemove=null';
+	var c = "<canvas id='"+ name +"_canvas' width='320' height='320' onclick='"+ click +"' onmousedown='"+ down +"' onmouseup='"+ up +"' onclick='"+ click +"'></canvas>";
+	return "<div id='wrap_"+ name +"'>"+ c +"</div>"
+    },
+
+    render: function(decl) {
+	var ret = [];
+	for(i in decl)
+	    if(typeof decl[i] == "object")
+		ret.push(Input.box(i, Input.render(decl[i])));
+	    else
+		ret.push(decl[i].call(this, i));
+	return ret.join("\n");
+    },
+    read: function(default_args) {
+	var ret = {};
+	for(var id in default_args) {
+	    var node = document.getElementById(id);
+	    ret[id] = node.value;
+	}
+	return ret;
+    },
+    write: function(args) {
+	for(var i in args)
+	    document.getElementById(i).value = args[i];
+    },
+};
+var form = {
+    refresh: Input.button("p.portrait_args=null;p.orbit_args=null;p.refresh()"),
+    stop: Input.button("p.stop()"),
+    reset: Input.button("p.reset()"),
+    save: Input.button("p.save()"),
+    mini: Input.button("toggle_class(document.getElementById('ui'), 'mini')"),
+
+    info: {
+	text: Input.data,
+	click: Input.info,
+    },
+    view: {
+	width: Input.int,
+	height: Input.int,
+	center: Input.func,
+	radius: Input.func,
+    },
+    func: {
+	data: Input.data,
+	extra: Input.nop, // whenever p.extra becomes available this is replaced by: Input.extra(p.extra)
+	z0: Input.func,
+	"f(z)": Input.func,
+    },
+    iter: {
+	maxiter: Input.int,
+	bailout: Input.func,
+	"trap(z)": Input.func,
+    },
+    color: {
+	"inside(z)": Input.func,
+	"outside(z)": Input.func,
+    },
+    orbit: {
+	length: Input.int,
+	mod: Input.int,
+	start: Input.func,
+	"next(z)": Input.func,
+	"ocolor(z)": Input.func,
+    },
+};
+
+var default_args = {
+    text: "",
+    click: "0",
+    width: 320,
+    height: 320,
+    center: "0",
+    radius: "1",
+    data: "",
+    z0: "0",
+    "f(z)": "z²+c",
+    maxiter: 8,
+    bailout: 2,
+    "trap(z)": "abs(z) > bailout",
+    "inside(z)": "hsv(arg(z), 1, 1)",
+    "outside(z)": "spectrum(k/maxiter)",
+    "ocolor(z)": "hsv(0, 0, k/length)",
+    length: 1000,
+    mod: 1,
+    start: "click",
+    "next(z)": "f(z)",
+};
+var default_extra = {
+    c: "pixel",
+};
+
+////////////////////////////////////////////////////////////////
+Math.frac = function(x) {
+    return x - Math.floor(x);
+};
+Math.min = function(a, b) {
+    return a<b ? a : b;
+};
+Math.max = function(a, b) {
+    return a<b ? b : a;
+};
+
+////////////////////////////////////////////////////////////////
+Complex = {
+    i: [0, 1],
+    pi: [Math.PI, 0],
+    eq: function(a, b) { return (a[0] == b[0]) && (a[1] == b[1]); },
+    to_string: function(c) {
+	var re = Number(c[0]).toPrecision(6);
+	var im = Number(c[1]).toPrecision(6);
+	var sgn = im >= 0 ? "+" : "";
+	return ""+ re + (im ? " "+ sgn + im +"i" : "");
+    },
+
+    add: function(w, z) {
+	return [
+	    w[0] + z[0],
+	    w[1] + z[1],
+	];
+    },
+    sub: function(w, z) {
+	return [
+	    w[0] - z[0],
+	    w[1] - z[1],
+	];
+    },
+    mul: function(w, z) {
+	return [
+	    w[0]*z[0] - w[1]*z[1],
+	    w[0]*z[1] + w[1]*z[0],
+	];
+    },
+    div: function(w, z) {
+	var v = z[0]*z[0] + z[1]*z[1];
+	return [
+	    (w[0]*z[0] + w[1]*z[1]) / v,
+	    (w[1]*z[0] - w[0]*z[1]) / v,
+	];
+    },
+    inv: function(z) {
+	var v = z[0]*z[0] + z[1]*z[1];
+	return [
+	    z[0] / v,
+	    -z[1] / v,
+	];
+    },
+    conj: function(z) {
+	return [
+	    z[0],
+	    -z[1],
+	];
+    },
+    neg: function(z) {
+	return [
+	    -z[0],
+	    -z[1],
+	];
+    },
+    absq: function(z) {
+	return [z[0]*z[0] + z[1]*z[1], 0];
+    },
+    abs: function(z) {
+	return [Math.sqrt(z[0]*z[0] + z[1]*z[1]), 0];
+    },
+    arg: function(c) {
+	return [Math.atan2(c[1], c[0]), 0];
+    },
+    sqr: function(c) {
+	return [ c[0]*c[0] - c[1]*c[1], 2*c[0]*c[1] ];
+    },
+    cube: function(z) {
+	return Complex.mul(Complex.sqr(z), z);
+    },
+    exp: function(z) {
+	var e = Math.exp(z[0])
+	return [ e*Math.cos(z[1]), e*Math.sin(z[1]) ];
+    },
+    ln: function(z) {
+	return [ Math.log(Complex.abs(z)[0]), Complex.arg(z)[0] ];
+    },
+    pow: function(b, e) {
+	return Complex.exp(Complex.mul(e,Complex.ln(b)));
+    },
+    sqrt: function(z) {
+	return Complex.pow(z, [0.5,0]);
+    },
+
+    sin: function(z) {
+	return Complex.div(
+	    Complex.sub(Complex.exp([-z[1],z[0]]), Complex.exp([z[1],-z[0]])),
+	    [0,2]
+	);
+    },
+    cos: function(z) {
+	return Complex.div(
+	    Complex.add(Complex.exp([-z[1],z[0]]), Complex.exp([z[1],-z[0]])),
+	    [2,0]
+	);
+    },
+    tan: function(z) {
+	return Complex.div(
+	    Complex.sin(z),
+	    Complex.cos(z)
+	);
+    },
+    asin: function(z) {
+	return Complex.mul([0,-1], Complex.ln(
+	    Complex.add(Complex.mul([0,1], z), Complex.sqrt(Complex.sub([1,0], Complex.sqr(z))))
+        ));
+    },
+    acos: function(z) {
+	return Complex.mul([0,-1], Complex.ln(
+	    Complex.add(z,                     Complex.sqrt(Complex.sub(Complex.sqr(z), [1,0])))
+	));
+    },
+    atan: function(z) {
+	return Complex.mul([0, 0.5], Complex.ln(
+	    Complex.div(
+		Complex.sub(1,Complex.mul([0,1],z)),
+		Complex.add(1,Complex.mul([0,1],z))
+	    )
+	));
+    },
+
+    sinh: function(z) {
+	return Complex.mul([0,-1], Complex.sin(Complex.mul([0,1],z)));
+    },
+    cosh: function(z) {
+	return                     Complex.cos(Complex.mul([0,1],z));
+    },
+    tanh: function(z) {
+	return Complex.mul([0,-1], Complex.tan(Complex.mul([0,1],z)));
+    },
+};
+
+////////////////////////////////////////////////////////////////
+Measure = {
+    checkerboard: function(c) {
+	return
+	    (Math.abs(c[0]) % 2 > 1) ^ (c[0] > 0) ^
+	    (Math.abs(c[1]) % 2 > 1) ^ (c[1] > 0);
+    },
+    grid: function(z) {
+	return [ frac(z[0]), frac(z[1]) ];
+    },
+    annulus: function(r1, r2, z) {
+	var r = Complex.abs(z)[0];
+	return  (r < r2[0] && r > r1[0]) ? [1,0] : [0,0];
+    },
+    sharp: function(t) {
+	var a = (2*t[0]+2) % 2 - 1;
+	a = Math.abs(2*a) - 1;
+	a = Math.asin(a) / Math.PI + 0.5;
+	return [a, 0];
+    },
+    axes: function(z) {
+	return Measure.sharp([Complex.arg(z)[0]/Math.PI, 0]);
+    },
+};
+for(var i in Measure)
+    Complex[i] = Measure[i];
+Complex.annulus = function(r1, r2, z) {
+    return Measure.annulus(r1[0], r2[0], z);
+}
+
+////////////////////////////////////////////////////////////////
+Color = {
+    rgb: function(r, g, b) {
+	return [ r, g, b ];
+    },
+    hsv: function(h, s, v) {
+	var r, g, b, i, f, p, q, t;
+	s = s > 1 ? 1 : s < 0 ? 0 : s;
+	v = v > 1 ? 1 : v < 0 ? 0 : v;
+
+	if (s==0)
+	    return [v, v, v];
+
+	h = h / 2 / Math.PI;
+	h = Math.frac(h)*6;
+	i = Math.floor(h);
+	f = h - i;
+	p = v * (1 - s);
+	q = v * (1 - s * f);
+	t = v * (1 - s * (1 - f));
+	switch (i) {
+	    case 0: return [v, t, p];
+	    case 1: return [q, v, p];
+	    case 2: return [p, v, t];
+	    case 3: return [p, q, v];
+	    case 4: return [t, p, v]
+	    case 5: return [v, p, q]
+	}
+    },
+    // stolen from http://stackoverflow.com/questions/3407942/rgb-values-of-visible-spectrum/22681410#22681410
+    nm: function(l) { // wavelength l ranges from 400 to 700 nanometers
+	var t, r=0.0, g=0.0, b=0.0;
+	     if ((l>=400)&&(l<410)) { t=(l-400)/(410-400); r=    +(0.33*t)-(0.20*t*t); }
+	else if ((l>=410)&&(l<475)) { t=(l-410)/(475-410); r=0.14         -(0.13*t*t); }
+	else if ((l>=545)&&(l<595)) { t=(l-545)/(595-545); r=    +(1.98*t)-(     t*t); }
+	else if ((l>=595)&&(l<650)) { t=(l-595)/(650-595); r=0.98+(0.06*t)-(0.40*t*t); }
+	else if ((l>=650)&&(l<700)) { t=(l-650)/(700-650); r=0.65-(0.84*t)+(0.20*t*t); }
+
+	     if ((l>=415)&&(l<475)) { t=(l-415)/(475-415); g=             +(0.80*t*t); }
+	else if ((l>=475)&&(l<590)) { t=(l-475)/(590-475); g=0.8 +(0.76*t)-(0.80*t*t); }
+	else if ((l>=585)&&(l<639)) { t=(l-585)/(639-585); g=0.84-(0.84*t)           ; }
+
+	     if ((l>=400)&&(l<475)) { t=(l-400)/(475-400); b=    +(2.20*t)-(1.50*t*t); }
+	else if ((l>=475)&&(l<560)) { t=(l-475)/(560-475); b=0.7 -(     t)+(0.30*t*t); }
+	return [r, g, b];
+    },
+    spectrum: function(p) {
+	return Color.nm(400 + p*300);
+    },
+};
+Complex.rgb = function(r, g, b) { return Color.rgb(r[0], g[0], b[0]); };
+Complex.hsv = function(h, s, v) { return Color.hsv(h[0], s[0], v[0]); };
+Complex.nm = function(l) { return Color.nm(l[0]); };
+Complex.spectrum = function(l) { return Color.spectrum(l[0]); };
+
+////////////////////////////////////////////////////////////////
+function Formula(L) {
+    for(var i in this.re)
+	this.re[i] = new RegExp(this.re[i]);
+    this.L = L;
+}
+Formula.prototype = {
+    re: {
+	number: /^[0-9]*[.]?[0-9]+/,
+	id: /^[a-zA-Z0-9_]+/, // no need to exclude numbers
+	op: /^[-+\/*^~!²³,()<>=?:]/,
+    },
+    lex: function(rest) {
+	var i = 0;
+	var args = {};
+	var ltrim_re = new RegExp(/^ */);
+	var ltrim = function(s) {
+	    var m = ltrim_re.exec(s);
+	    i += m[0].length;
+	    return s.substr(m[0].length);
+	};
+	var error = function(i, msg) {
+	    throw new Error("Formula.lex error: "+ i +": "+ msg);
+	};
+	var ret = [];
+	while(rest = ltrim(rest)) {
+	    var m;
+	    m = null;
+	    for(var t in this.re)
+		if(m = this.re[t].exec(rest)) {
+		    ret.push({
+			i: i,
+			t: t,
+			m: m,
+		    });
+		    i += m[0].length;
+		    rest = rest.substr(m[0].length);
+		    break;
+		}
+	    if(!m)
+		error(i, "symbol not recognized: "+ rest);
+	}
+	return ret;
+    },
+    compile: function(name, s) {
+	var lib = this.L;
+	var context = {};
+	var op = function(op, ll) {
+	    if(!ll.length || ll[0].t != "op" || ll[0].m[0] != op)
+		return false;
+	    ll.shift();
+	    return true;
+	};
+	var eat = function(ll) {
+	    return ll.shift().m[0];
+	};
+	var error = function(i, msg) {
+	    throw new Error(name +": error at char "+ i +": "+ msg);
+	};
+	var parse_unsigned = function(ll) {
+	    if(ll[0].t != "number")
+		error(ll[0].i, "number expected");
+	    var u = eat(ll);
+	    if(ll.length && ll[0].t == "id" && ll[0].m[0] == "i") {
+		eat(ll);
+		return "[0,"+ u +"]";
+	    }
+	    return "["+ u +", 0]";
+	};
+	var parse_list = function(ll) {
+	    if(!ll.length)
+		return "";
+	    var ret = parse_expr(ll);
+	    while(op(",", ll))
+		ret += ","+ parse_expr(ll);
+	    return ret;
+	};
+	var parse_value = function(ll) {
+	    if(ll[0].t == "id") {
+		var id = eat(ll);
+		var t = "variable";
+		var call = "";
+		if(op("(", ll)) {
+		    var l = parse_list(ll);
+		    if(!op(")", ll))
+			error(ll[0].i, "')' expected");
+		    t = "function";
+		    call = "("+ l +")";
+		}
+		var prefix = "A.";
+		if(id in lib)
+		    prefix = "this.";
+		else if(id in args)
+		    prefix = "";
+		else if(id in context) {
+		    if(context[id] != t)
+			error(ll[0].i, "type error: "+ id +": "+ context[id] +" expected");
+		}
+		else
+		    context[id] = t;
+		return prefix + id + call;
+	    }
+	    return parse_unsigned(ll);
+	};
+	var parse_pow = function(ll) {
+	    var base = parse_value(ll);
+	    if(op("^", ll))
+		return "this.pow("+ base +","+ parse_unary(ll) +")";
+	    return base;
+	}
+	var parse_compound = function(ll) {
+	    if(op("(", ll)) {
+		var s = parse_expr(ll);
+		if(!op(")", ll))
+		    error(ll[0].i, "')' expected");
+		return "("+ s +")";
+	    }
+	    return parse_pow(ll);
+	};
+	var parse_unary = function(ll) {
+	    if(op("-", ll))
+		return "this.neg("+ parse_compound(ll) +")";
+	    if(op("+", ll))
+		return parse_compound(ll);
+	    if(op("~", ll))
+		return "this.conj("+ parse_compound(ll) +")";
+	    var ret = parse_compound(ll);
+	    if(op("!", ll))
+		return "this.fac("+ ret +")";
+	    if(op("²", ll))
+		return "this.sqr("+ ret +")";
+	    if(op("³", ll))
+		return "this.cube("+ ret +")";
+	    return ret;
+	};
+	var parse_prod = function(ll) {
+	    var ret = parse_unary(ll);
+	    while(ll)
+		if(op("*", ll))
+		    ret = "this.mul("+ ret +","+ parse_unary(ll) +")";
+		else if(op("/", ll))
+		    ret = "this.div("+ ret +","+ parse_unary(ll) +")";
+		else
+		    break;
+	    return ret;
+	};
+	var parse_sum = function(ll) {
+	    var ret = parse_prod(ll);
+	    while(ll)
+		if(op("+", ll))
+		    ret = "this.add("+ ret +","+ parse_prod(ll) +")";
+		else if(op("-", ll))
+		    ret = "this.sub("+ ret +","+ parse_prod(ll) +")";
+		else
+		    break;
+	    return ret;
+	};
+	var parse_ineq = function(ll) {
+	    var left = parse_sum(ll);
+	    var o;
+	    if(op((o = "<"), ll) || op((o = ">"), ll)) {
+		if(op("=", ll))
+		    o += "=";
+		return "("+ left +")[0]"+ o +"("+ parse_sum(ll) +")[0]";
+	    }
+	    if(op("=", ll))
+		return "eq("+ left +","+ parse_sum(ll) +")";
+	    return left;
+	}
+	var parse_conj = function(ll) {
+	    var ret = parse_ineq(ll);
+	    while(ll)
+		if(op("&", ll))
+		    ret = ret +"&&"+ parse_ineq(ll);
+		else
+		    break;
+	    return ret;
+	};
+	var parse_disj = function(ll) {
+	    var ret = parse_conj(ll);
+	    while(ll)
+		if(op("|", ll))
+		    ret = ret +"||"+ parse_conj(ll);
+		else
+		    break;
+	    return ret;
+	};
+	var parse_tern = function(ll) {
+	    var left = parse_disj(ll);
+	    if(!op("?", ll))
+		return left;
+	    var mid = parse_disj(ll);
+	    if(!op(":", ll))
+		error(ll[0].i, "':' expected");
+	    return left +"?"+ mid +":"+ parse_disj(ll);
+	};
+	var parse_expr = parse_tern;
+
+	var name_re = new RegExp(/^([a-zA-Z_][a-zA-Z0-9_]*)(\((.*)\))?$/);
+	var m = name_re.exec(name);
+	var n = m[1];
+	var args = {};
+	if(m[3]) {
+	    var a = m[3].split(",");
+	    for(var i in a)
+		args[a[i]] = true;
+	}
+	var arg_list = m[3] ? ","+ m[3] : "";
+
+	var ll = this.lex(s);
+	var code = parse_expr(ll);
+	if(ll.length) {
+	    error(ll[0].i, "missing operand before '"+ ll[0].m[0] +"'");
+	    console.log(name, code, ll);
+	}
+	code = "function compiled_"+ n +"(A"+ arg_list +") { return "+ code +"; }; compiled_"+ n;
+	var f = eval(code).bind(lib);
+	// annotate:
+	var nargs = 0;
+	for(var i in args)
+	    ++nargs;
+	f.C = {
+	    name: n,
+	    oname: name,
+	    nargs: nargs,
+	    context: context,
+	};
+	return f;
+    },
+    resolve: function(compiled, name) {
+	var ret = [];
+	var found = {};
+	var worker = function(name) {
+	    found[name] = true;
+	    ret.push(name);
+	    if(!(name in compiled))
+		return;
+	    var c = compiled[name].C.context;
+	    for(var n in c)
+		if(!(n in found))
+		    worker(n);
+	};
+	worker(name);
+	return ret.reverse();
+    },
+};
+
+////////////////////////////////////////////////////////////////
+function Gfx(canvas, w, h) {
+    this.w = w;
+    this.h = h;
+    this.canvas = canvas;
+    this.ctx = this.canvas.getContext("2d");
+    this.canvas.setAttribute("width", w);
+    this.canvas.setAttribute("height", h);
+    this.pixel_id = this.ctx.createImageData(1, 1);
+    this.row = this.ctx.createImageData(w, 1);
+    for(var i = 0; i < w; ++i)
+	this.row.data[4*i + 3] = 255; /* alpha: fully opaque */
+}
+Gfx.prototype = {
+    clear: function() {
+	var e = this.ctx.createImageData(this.w, this.h);
+	this.ctx.putImageData(e, 0, 0);
+    },
+    put_row: function(x, y, r) {
+	var d = this.row.data;
+	var w = this.w;
+	for(var i = 0; i < w; ++i) {
+	    var j = 4*i;
+	    d[j + 0] = 255*r[i][0];
+	    d[j + 1] = 255*r[i][1];
+	    d[j + 2] = 255*r[i][2];
+	}
+	this.ctx.putImageData(this.row, x, y);
+    },
+    capture: function() {
+	return this.ctx.getImageData(0, 0, this.w, this.h);
+    },
+    restore: function(screen) {
+	if(screen)
+	    this.ctx.putImageData(screen, 0, 0);
+    },
+    draw_pixel: function(x, y, r, g, b) {
+	var p = this.pixel_id.data;
+	p[0] = 255*r;
+	p[1] = 255*g;
+	p[2] = 255*b;
+	p[3] = 255;
+	this.ctx.putImageData(this.pixel_id, x, y);
+    },
+
+    draw_cross: function(x, y, style) {
+	var r = 12;
+	this.ctx.beginPath();
+	this.ctx.moveTo(x-r, y);
+	this.ctx.lineTo(x+r, y);
+	this.ctx.moveTo(x,   y-r);
+	this.ctx.lineTo(x,   y+r);
+	this.ctx.strokeStyle = style;
+	this.ctx.stroke();
+    },
+    draw_coord: function(x, y) {
+	this.draw_cross(x+1, y+1, "#000000");
+	this.draw_cross(x, y, "#ffffff");
+    },
+    draw_text: function(x, y, text) {
+	this.ctx.font = '12px sans';
+	this.ctx.fillStyle = "#000000";
+	this.ctx.fillText(text, x + 3, y - 2);
+	this.ctx.fillStyle = "#ffffff";
+	this.ctx.fillText(text, x + 2, y - 3);
+    },
+};
+
+////////////////////////////////////////////////////////////////
+
+function toggle_class(node, c) {
+    var ret = [];
+    var cl = node.className.split(" ");
+    var found = false;
+    var n = cl.length;
+    for(var i = 0; i < n; ++i)
+	if(cl[i] == c)
+	    found = true;
+	else
+	    ret.push(cl[i]);
+    if(!found)
+	ret.push(c);
+    node.className = ret.join(" ");
+}
+function has_class(node, c) {
+    var cl = node.className.split(" ");
+    var n = cl.length;
+    for(var i = 0; i < n; ++i)
+	if(cl[i] == c)
+	    return true;
+    return false;
+}
+function set_class(node, c) {
+    if(!has_class(node, c))
+	toggle_class(node, c);
+}
+function unset_class(node, c) {
+    if(has_class(node, c))
+	toggle_class(node, c);
+}
+function read_hash() {
+    var a = location.href.split("#");
+    if(a.length != 2)
+	return {};
+    a = a[1].split("&");
+    var ret = {};
+    for(var i in a) {
+	var p = a[i].split("=");
+	ret[p[0]] = decodeURIComponent(p[1]);
+    }
+    return ret;
+}
+function format_hash(a) {
+    var ret = [];
+    for(var i in a)
+	ret.push(""+ i +"="+ encodeURIComponent(a[i]));
+    return "#"+ ret.join("&");
+}
+function write_hash(a) {
+    window.location.hash = format_hash(a);
+}
+
+function copy(a, b) {
+    for(var i in a)
+	if(typeof a[i] == "object") {
+	    if(typeof b[i] != "object")
+		b[i] = {};
+	    copy(a[i], b[i]);
+	}
+        else
+	    b[i] = a[i];
+}
+function dup(a) {
+    var ret = {};
+    copy(a, ret);
+    return ret;
+}
+
+function Plotter() {
+    this.init_args = dup(default_extra);
+    copy(default_args, this.init_args);
+    var n = document.getElementById("portrait");
+    n.innerHTML = Input.canvas("portrait") + Input.canvas("orbit") + "<div id='ui'></div>";
+    this.ui = document.getElementById("ui");
+    Complex.data = function(i, j) {
+	if(typeof j == "undefined")
+	    j = [0, 0];
+	i = i[0];
+	j = j[0];
+        i = i % this.data.length;
+        if(j >= this.data[i].length)
+            return [0, 0];
+        return this.data[i][j];
+    }.bind(this);
+    this.parser = new Formula(Complex);
+}
+Plotter.prototype = {
+    init_args: {},
+    refresh_ui: function() {
+	var e = {};
+	for(var i in this.args)
+	    if(!(i in default_args))
+		e[i] = this.args[i];
+	form.func.extra = Input.extra(e);
+	this.ui.innerHTML = Input.render(form);
+	Input.write(this.args);
+    },
+    read_hash: function() {
+	var h = read_hash();
+	for(var i in h)
+	    if(i in this.init_args)
+		this.init_args[i] = h[i];
+	this.args = dup(this.init_args);
+	this.refresh_ui();
+    },
+    get_hash_data: function() {
+	var h = {};
+	for(var i in this.args)
+	    if(this.args[i] != default_args[i])
+		h[i] = this.args[i];
+	return h;
+    },
+    refresh_hash: function() {
+	write_hash(this.get_hash_data());
+    },
+    reset: function() {
+	this.args = dup(this.init_args);
+	this.refresh_ui();
+    },
+    refresh_timer: null,
+    stop: function() {
+	clearTimeout(this.refresh_timer);
+	unset_class(this.ui, "computing");
+    },
+    args: {},
+    compiled: null,
+    add_extra: function() {
+	var inp = Input.read({
+	    extra_name: "",
+	});
+	if(inp.extra_name in default_args || inp.extra_name in Complex)
+	    throw new Error("cannot shadow predefined objects");
+	this.args[inp.extra_name] = "0";
+	this.refresh_ui();
+    },
+    del_extra: function(name) {
+	if(name in default_args)
+	    throw new Error("cannot remove predefined objects"); // never happens?
+	delete this.args[name];
+	this.refresh_ui();
+    },
+    read_data: function(s) {
+	var trim_re = new RegExp(/^ *(.*[^ ]|) */);
+	var trim = function(s) {
+	    var m = trim_re.exec(s);
+	    return m[1];
+	};
+
+	var ret = [];
+	var lines = s.split("\n");
+	for(var i in lines) {
+	    var cols = lines[i].split("#")[0].split(";");
+	    for(var j in cols)
+		if("" == trim(cols[j]))
+		    cols[j] = [0, 0];
+	        else
+		    cols[j] = this.parser.compile("data_"+ i +"_"+ j, cols[j])({});
+	    if(cols.length)
+		ret.push(cols);
+	}
+	return ret;
+    },
+    compile: function() {
+	var c = function(name, s) {
+	    var f = this.parser.compile(name, s);
+	    var n = f.C.name;
+	    this.compiled[n] = f;
+	}.bind(this);
+	this.compiled = {};
+	for(var i in this.args)
+	    if(i != "text" && i != "data")
+		c(i, this.args[i]);
+    },
+    read_args: function() {
+	var parser = new Formula(Complex);
+	this.args = Input.read(this.init_args);
+        this.data = this.read_data(document.getElementById("data").value);
+	if(!this.args.width)
+	    this.args.width = Math.min(window.innerWidth, window.innerHeight);
+	if(!this.args.height)
+	    this.args.height = Math.min(window.innerWidth, window.innerHeight);
+	this.compile();
+    },
+    extern: { pixel: 1, k: 1, },
+    resolve: function(name) {
+	if(name.split("(").length > 1)
+	    name = name.split("(")[0];
+	var r = this.parser.resolve(this.compiled, name);
+	for(var i in r) {
+	    if(r[i] in this.extern)
+		continue;
+	    var n = this.compiled[r[i]].C.name;
+	    if(this.compiled[r[i]].C.nargs) // is a function with arguments
+		this.param[n] = this.compiled[r[i]].bind(this, this.param);
+	    else
+		this.param[n] = this.compiled[r[i]](this.param);
+	}
+	var n = this.compiled[name].C.name;
+	return this.param[n];
+    },
+    per_pixel: function(pixel) {
+	this.param.k = [0, 0];
+	this.param.pixel = pixel;
+    },
+    per_iter: function(k) {
+	this.param.k = [k, 0];
+    },
+    param: null,
+    is_unchanged: function(args, check) {
+	if(!args)
+	    return false;
+	var involved = {};
+	for(var i in check) {
+	    var r = this.parser.resolve(this.compiled, check[i]);
+	    for(var j in r)
+		involved[r[j]] = true;
+	}
+	for(var i in involved)
+	    if(this.args[i] != args[i])
+		return false;
+	return true;
+    },
+    orbit_gfx: null,
+    orbit_check: [ "length", "mod", "start", "next(z)", "trap(z)", "ocolor(z)", ],
+    orbit_args: null,
+    refresh_orbit: function() {
+	if(this.is_unchanged(this.orbit_args, this.orbit_check))
+	    return;
+	this.orbit_args = dup(this.args);
+
+	var w = this.resolve("width")[0];
+	var h = this.resolve("height")[0];
+	var n = this.resolve("length")[0];
+	var m = this.resolve("mod")[0];
+	var start = this.resolve("start");
+	this.per_pixel(start);
+	var next = this.resolve("next(z)");
+	if(m > 0)
+	    next = function(f, m, z) {
+		for(var i = m; i; --i)
+		    z = f(z);
+		return z;
+	    }.bind(this, next, m);
+	var trap = this.resolve("trap(z)");
+	var color = this.resolve("ocolor(z)");
+	var z = this.resolve("z0");
+	var xy0 = this.to_pixel(start);
+	var rgb;
+
+	this.orbit_gfx.clear();
+	for(var k = 1; !(t = trap(z)) && k < n; ++k) {
+	    this.per_iter(k);
+	    z = next(z);
+	    xy = this.to_pixel(z);
+	    rgb = color(z);
+	    this.orbit_gfx.draw_pixel(xy[0], xy[1], rgb[0], rgb[1], rgb[2]);
+	}
+	this.orbit_gfx.draw_coord(xy0[0], xy0[1]);
+	this.orbit_gfx.draw_text(xy0[0], xy0[1], Complex.to_string(start));
+    },
+    portrait_gfx: null,
+    portrait_check: [ "maxiter", "z0", "f(z)", "trap(z)", "outside(z)", "inside(z)" ],
+    portrait_args: null,
+    refresh_portrait: function(done_handler) {
+	if(this.is_unchanged(this.portrait_args, this.portrait_check))
+	    return done_handler();
+	p.stop();
+	this.portrait_args = dup(this.args);
+
+	var w = this.resolve("width")[0];
+	var h = this.resolve("height")[0];
+	var n = this.resolve("maxiter")[0];
+	var trap = this.resolve("trap(z)");
+	var outside = this.resolve("outside(z)");
+	var inside = this.resolve("inside(z)");
+
+	this.portrait_gfx = new Gfx(document.getElementById("portrait_canvas"), w, h);
+
+	var y = 0;
+	var row = [];
+	var worker = function() {
+	    for(var x = 0; x < w; ++x) {
+		this.per_pixel(this.of_pixel(x, y));
+		var f = this.resolve("f(z)");
+		var z = this.resolve("z0");
+		var k;
+		for(k = 0; !trap(z) && k < n; ++k) {
+		    this.per_iter(k);
+		    z = f(z);
+		}
+		row[x] = k < n ? outside(z) : inside(z);
+	    }
+	    this.portrait_gfx.put_row(0, y, row);
+	    ++y;
+	    if(y < h)
+		this.refresh_timer = setTimeout(worker, 1);
+	    else {
+		done_handler();
+	    }
+	}.bind(this);
+	this.refresh_timer = setTimeout(worker, 1);
+    },
+    refresh_transform: function() {
+	var w = this.resolve("width")[0];
+	var h = this.resolve("height")[0];
+	var c = this.resolve("center");
+	var r = this.resolve("radius");
+
+	var half_w = w/2, half_h = h/2;
+	var a = Complex.div(r, [ Math.min(half_h, half_w), 0 ]);
+	this.to_pixel = function(z) {
+	    z = Complex.div(Complex.sub(z, c), a);
+	    return [ z[0] + half_w, half_h - z[1] ];
+	}
+	this.of_pixel = function(x, y) {
+	    return Complex.add(Complex.mul([ x - half_w, half_h - y ], a), c);
+	};
+    },
+    refresh: function() {
+	this.read_args();
+	this.param = {};
+
+	var w = this.resolve("width")[0];
+	var h = this.resolve("height")[0];
+	if(!this.portrait_gfx || w != this.portrait_gfx.w || h != this.portrait_gfx.h) {
+	    this.portrait_gfx = new Gfx(document.getElementById("portrait_canvas"), w, h);
+	    this.orbit_gfx = new Gfx(document.getElementById("orbit_canvas"), w, h);
+	    this.portrait_args = null;
+	    this.orbit_args = null;
+	}
+	this.refresh_transform();
+
+	set_class(this.ui, "computing");
+	this.refresh_orbit();
+	this.refresh_portrait(function() {
+	    unset_class(this.ui, "computing");
+	}.bind(this));
+    },
+    write: function(args) {
+	Input.write(args);
+	this.read_args();
+	this.refresh_hash();
+	for(var i in args)
+	    set_class(document.getElementById(i).parentElement, "pinned");
+	this.refresh();
+    },
+    save: function() {
+	var n = document.getElementById("saved");
+	var h = format_hash(this.get_hash_data());
+	var d = this.portrait_gfx.canvas.toDataURL("image/png");
+	var html = "<a href='"+ h +"'>"+ "<img width='200' src='"+ d +"'>" +"</a>";
+	n.insertAdjacentHTML("afterbegin", html);
+    },
+}
+
+var p = new Plotter();
+var canvas_onclick = function(event) {
+    p.write({click: Complex.to_string(p.of_pixel(event.offsetX, event.offsetY))});
+};
+var add_extra = p.add_extra.bind(p);
+var del_extra = p.del_extra.bind(p);
+
+p.read_hash();
+p.ui.onchange = p.refresh.bind(p);
+p.refresh();
+
+// window.addEventListener("hashchange", function() { p.read_hash(); });
+
+// todo: notice ui changes, update accordingly (allow turning auto off)
+// todo: record pinned state in hash
+// todo: more types, better error messages
+// todo: make sure NaN in pixel information does not halt computation
+
+// todo: allow iterating parameters recursively (z0 notation), e.g. to measure orbit properties
+
+// todo: optimize constant expressions
+// todo: optimize real argument calls
+// todo: modularize Plotter features into multiple modules that get overlayed to a plotter object
+// todo: react on hash changes (as external api?)
+// todo: orbit on extra layer? performance impact?
+// todo: better input widgets
+
+</script>
+
+<div id='saved'></div>
+
+<div class='story'>
+
+<ul>
+<li>You can click on a label to pin an input field, then click [mini] to show only pinned fields.</li>
+<li>Or specify a complex number for radius to <button onclick='p.write({r:"1.5*exp(45*i*pi/180)"})'>rotate</button> the view.</li>
+
+<li>You can analyze functions by setting <button onclick='p.write({maxiter:"1"})'>maxiter = 1</button></li>
+<li>To study its recursive behaviour you would use <button onclick='p.write({c:Complex.to_string(p.param.start),z0:"pixel"})'>julia</button> style iteration, varying 'z0'.</li>
+<li>On the other hand, <button onclick='p.write({c:"pixel", z0:"0"})'>mandelbrot</button> iteration style sets 'z0=0', and varies a parameter 'c' per pixel.</li>
+<li>Clicking on the picture will set the 'click' parameter and attempt to draw an orbit for your function. The 'pixel' parameter is derived from the 'start' field. Here, explore orbits on the main <button onclick='p.write({start:"0.25*(1-(1-click/abs(click))²)"})'>cardioid</button> of the mandelbrot set!</li>
+
+<li>The iteration counter is called 'k', and you can use it to access data cells as in data(row, column). For example, let us alternate 'c' to get an <button onclick='p.write({z0:"pixel","f(z)":"z²+data(k)",data:"-0.745+0.113i\n-0.747+0.048i"})'>alternating Julia</button>, Chris M. Thomasson style.</li>
+</ul>
+
+<h1>data</h1>
+<ul>
+<li>Specifying [data] can be a nice quick and dirty <button onclick='p.write({})'>alternative</button> to describing Taylor series coefficients with a <button onclick='p.write({c:Complex.to_string(p.param.start),z0:"pixel","f(z)":"data(k)", data:"-0.75+0.01i\n-0.123+0.745i"})'>formula</button>.</li>
+
+<li>If you need more data, you can specify more than one value per row, separated by comma. Giving a second argument to data lets you access these.</li>
+
+<li>You can add comments after a # sign, or have empty lines that will also be ignored.</li>
+
+<li>The data(j, k) function returns values for any indices. Rows get repeated, undefined columns are always zero.</li>
+</ul>
+
+<h1>colors</h1>
+<ul>
+<li>The <button onclick='p.write({"inside(z)":"hsv(0, 0, axes(z))"})'>axes</button> coloring function employs the arcsin function to highlight the imaginary axis in black, and the real axis in white.</li>
+</ul>
+</div>
+
+</body>
+</html>

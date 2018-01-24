@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html xmlns="www.w3.org/1999/xhtml" xml:lang="en">
+<head>
+  <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+  <meta name="viewport" content="width=device-width, user-scalable=yes">
+  <title>Benchmarking elementary js features</title>
+</head>
+<body>
+
+<div id="bench"></div>
+
+<style>
+  span {
+    display: inline-block;
+    text-align: right;
+    margin-right: 1ex;
+    width: 5ex;
+  }
+  pre {
+    margin-left: 10ex;
+  }
+</style>
+
+<script type="text/javascript">
+
+var data = [];
+for(var i = 0; i < 10000; ++i)
+    data[i] = i;
+
+function bench(code) {
+    var f = eval("(function() {"+ code +"})");
+    var start = new Date();
+    for(var i = 0; i < 4000; ++i)
+	f();
+    var stop = new Date();
+    var dt = Number(stop.getTime()) - Number(start.getTime());
+    var bench = document.getElementById("bench");
+    bench.innerHTML += "<div><span>"+ dt +"</span><pre>"+ code +"</pre></div>\n";
+}
+function h1(s) {
+    var bench = document.getElementById("bench");
+    bench.innerHTML += "<h1>"+ s +"</h1>";
+}
+
+h1("variance test and filtering early outliers");
+bench('for(var i = 0; i < 10000; ++i);');
+bench('for(var i = 0; i < 10000; ++i);');
+bench('for(var i = 0; i < 10000; ++i);');
+bench('for(var i = 0; i < 10000; ++i);');
+bench('for(var i = 0; i < 10000; ++i);');
+bench('for(var i = 0; i < 10000; ++i);');
+bench('for(var i = 0; i < 10000; ++i);');
+bench('for(var i = 0; i < 10000; ++i);');
+
+h1("for loops and local variables");
+bench('for(var i = 0; i < 10000; ++i)\n  i;');
+bench('var i; for(i = 0; i < 10000; ++i)\n  i;');
+bench('for(var i = 0; i < data.length; ++i)\n  i;');
+bench('for(var i = 0; i < data.length; ++i)\n  data[i];');
+bench('var l = data.length;\nfor(var i = 0; i < l; ++i)\n  data[i];');
+bench('var d = data;\nfor(var i = 0; i < d.length; ++i)\n  d[i];');
+bench('var d = data;\nvar l = data.length;\nfor(var i = 0; i < l; ++i)\n  d[i];');
+bench('for(var i in data)\n  i;');
+bench('var d = data;\nfor(var i in d)\n  i;');
+bench('for(var i in data)\n  data[i];');
+bench('var d = data;\nfor(var i in d)\n  d[i];');
+
+h1("function and method calls");
+var obj = {
+    f: function() {},
+};
+function g() {};
+bench('for(var i = 0; i<10000; ++i) obj.f');
+bench('for(var i = 0; i<10000; ++i) obj.f()');
+bench('for(var i = 0; i<10000; ++i) g()');
+bench('for(var i = 0; i<10000; ++i) g.call()');
+bench('for(var i = 0; i<10000; ++i) obj.f.call(obj)');
+bench('function h() {}; h()');
+bench('function h() {} for(var i = 0; i<10000; ++i) h()');
+
+</script>
+
+</body>
+</html>
